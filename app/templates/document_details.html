@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.original_filename }} - Study Summarizer & Notes | SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN WORKSPACE -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search notes, chapters, or concepts..." id="page-search-input">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.documents_list') }}" class="topbar-icon-btn" title="Back to Documents">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Breadcrumbs -->
+                <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                    <a href="{{ url_for('main.documents_list') }}" style="color: var(--terracotta); text-decoration: none; font-weight: 600;">← Documents Archive</a>
+                    <span>/</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">{{ document.original_filename }}</span>
+                </div>
+
+                <!-- Editorial Document Header Banner -->
+                <div class="editorial-card" style="margin-bottom: 24px; position: relative; overflow: hidden; background: linear-gradient(135deg, #FFFDF9 0%, #F5ECE0 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                        <div style="display: flex; gap: 18px; align-items: flex-start;">
+                            <div style="background: var(--terracotta); color: #fff; font-size: 1.1rem; font-weight: 800; padding: 14px 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); text-align: center;">
+                                PDF
+                                <div style="font-size: 0.65rem; font-weight: 500; opacity: 0.9; margin-top: 2px;">DOC</div>
+                            </div>
+                            <div>
+                                <div class="editorial-tagline" style="margin-bottom: 4px;">Study Material Dossier</div>
+                                <h1 style="font-family: var(--font-heading); font-size: 1.85rem; color: var(--text-primary); margin: 0 0 6px 0; line-height: 1.2;">
+                                    {{ document.original_filename }}
+                                </h1>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                                    Indexed Archive File: <span style="font-family: monospace; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px;">{{ document.stored_filename }}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <a href="{{ url_for('main.new_quiz_config', doc_id=document.id) }}" class="btn-terracotta-pill" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polygon points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>Create Quiz</span>
+                            </a>
+                            <a href="{{ url_for('main.document_chat', doc_id=document.id) }}" class="btn-card-action" style="background: var(--bg-secondary); text-decoration: none; font-weight: 600; padding: 9px 16px; border-radius: 20px;" title="Open AI Study Chatbot">
+                                💬 <span>Study Chat</span>
+                            </a>
+                            <a href="{{ url_for('main.document_text', doc_id=document.id) }}" class="btn-card-action" style="background: var(--bg-secondary); text-decoration: none; font-weight: 600; padding: 9px 16px; border-radius: 20px;" title="Raw Text Reader">
+                                📄 <span>Text Reader</span>
+                            </a>
+                            <a href="{{ url_for('main.document_text', doc_id=document.id) }}?format=json" target="_blank" class="btn-card-action" style="background: var(--bg-secondary); text-decoration: none; font-weight: 600; padding: 9px 16px; border-radius: 20px;" title="View Extracted JSON">
+                                <code>{ }</code> <span>JSON API</span>
+                            </a>
+                            <form action="{{ url_for('main.delete_document_route', doc_id=document.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete \'{{ document.original_filename }}\' and all its extracted page text?');">
+                                <button type="submit" style="background: transparent; border: 1px solid rgba(217, 83, 79, 0.4); color: #c9443b; padding: 9px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer;" title="Delete document">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- OCR Banner: shown for scanned PDFs only -->
+                    {% if document.processing_status == 'scanned_no_text' %}
+                    <div id="ocr-banner" style="margin-top: 18px; padding: 14px 18px; background: rgba(232, 199, 122, 0.2); border: 1.5px solid rgba(232, 199, 122, 0.6); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-weight: 700; color: #8A6D1D; font-size: 0.9rem;">⚠️ Scanned / Image-only PDF</div>
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 3px;">
+                                No extractable text was found. If Tesseract OCR is installed, click <strong>Run OCR</strong> to extract text from the scanned pages.
+                            </div>
+                        </div>
+                        <button id="btn-run-ocr"
+                            onclick="runOcrReprocess({{ document.id }})"
+                            style="background: #8A6D1D; color: #fff; border: none; padding: 9px 18px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;">
+                            🔍 Run OCR
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Metrics Badges Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-warm);">
+                        <div style="background: rgba(255,255,255,0.7); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 14px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 2px;">Total Pages</div>
+                            <div style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">{{ document.total_pages }}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 14px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 2px;">Extracted Words</div>
+                            <div style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">{{ "{:,}".format(document.total_words) }}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 14px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 2px;">Processing Status</div>
+                            <div style="margin-top: 4px;">
+                                {% if document.processing_status == 'processed' %}
+                                    <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(130, 150, 107, 0.2); color: var(--forest-green); font-size: 0.8rem; font-weight: 700;">✓ Ready & Processed</span>
+                                {% elif document.processing_status == 'ocr_completed' %}
+                                    <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(100, 160, 220, 0.2); color: #1a5a8a; font-size: 0.8rem; font-weight: 700;">🔍 OCR Completed</span>
+                                {% elif document.processing_status == 'scanned_no_text' %}
+                                    <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(232, 199, 122, 0.35); color: #8A6D1D; font-size: 0.8rem; font-weight: 700;">⚠️ Scanned PDF</span>
+                                {% else %}
+                                    <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(217, 83, 79, 0.2); color: #c9443b; font-size: 0.8rem; font-weight: 700;">{{ document.processing_status }}</span>
+                                {% endif %}
+                            </div>
+                            {% if document.extraction_method and document.extraction_method not in ('pymupdf', '', None) %}
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px;">
+                                via {{ document.extraction_method | upper }}{% if document.ocr_confidence %} · {{ "%.0f"|format(document.ocr_confidence) }}% confidence{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 14px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 2px;">Upload Timestamp</div>
+                            <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                                {{ document.upload_date[:10] }} {{ document.upload_date[11:19] }} UTC
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div style="margin-bottom: 20px;">
+                            {% for category, message in messages %}
+                                <div style="padding: 12px 18px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-warm); color: var(--text-primary); margin-bottom: 8px;">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- AI Summarization & Study Insights Section (Styled as an Open Notebook) -->
+                <section class="editorial-card" id="summarization-section" data-doc-id="{{ document.id }}" style="margin-bottom: 30px; position: relative;">
+                    <!-- Pushpin Accent -->
+                    <div class="sticky-pushpin" style="top: -12px; left: 32px; z-index: 5;"></div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border-warm); padding-bottom: 16px;">
+                        <div>
+                            <div class="editorial-tagline">HuggingFace Transformer & NLP Engine</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.55rem; color: var(--text-primary); margin: 0 0 6px 0;">
+                                AI Study Summarizer & Insights
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">
+                                DistilBART abstractive summaries, concept definitions, high-yield exam points, and TF-IDF keywords.
+                            </p>
+                        </div>
+                        <div style="font-size: 0.8rem; background: var(--bg-warm); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-warm); color: var(--forest-green); font-weight: 600;">
+                            🌿 Offline Neural Pipeline
+                        </div>
+                    </div>
+
+                    <!-- Summary Mode Controls -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; background: var(--bg-warm); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-warm);">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Summary Mode:</span>
+                            <div class="mode-pills" role="radiogroup" aria-label="Summary Mode" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <label class="mode-pill {% if not current_summary or current_summary.summary_type == 'quick' %}active{% endif %}" id="pill-mode-quick" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="summary_type_select" value="quick" class="sr-only" style="display:none;" {% if not current_summary or current_summary.summary_type == 'quick' %}checked{% endif %}>
+                                    <span style="font-size: 1.1rem;">⚡</span>
+                                    <span>
+                                        <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Quick Summary</strong>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">5–7 Key Sentences</small>
+                                    </span>
+                                </label>
+                                <label class="mode-pill {% if current_summary and current_summary.summary_type == 'standard' %}active{% endif %}" id="pill-mode-standard" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="summary_type_select" value="standard" class="sr-only" style="display:none;" {% if current_summary and current_summary.summary_type == 'standard' %}checked{% endif %}>
+                                    <span style="font-size: 1.1rem;">📋</span>
+                                    <span>
+                                        <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Standard Summary</strong>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">Detailed Main Topics</small>
+                                    </span>
+                                </label>
+                                <label class="mode-pill {% if current_summary and current_summary.summary_type == 'detailed' %}active{% endif %}" id="pill-mode-detailed" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="summary_type_select" value="detailed" class="sr-only" style="display:none;" {% if current_summary and current_summary.summary_type == 'detailed' %}checked{% endif %}>
+                                    <span style="font-size: 1.1rem;">📚</span>
+                                    <span>
+                                        <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Detailed Summary</strong>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">Comprehensive & Sections</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            {% if document.processing_status == 'scanned_no_text' or document.total_words == 0 %}
+                                <button type="button" class="btn-primary-action disabled" disabled style="opacity: 0.6; cursor: not-allowed; padding: 10px 18px; border-radius: 20px;">
+                                    <span>No Extractable Text</span>
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn-terracotta-pill" id="btn-generate-summary" style="padding: 10px 22px; font-size: 0.95rem; cursor: pointer;">
+                                    ✨ <span id="btn-generate-text">{% if current_summary %}Regenerate Summary{% else %}Generate Summary{% endif %}</span>
+                                </button>
+
+                                {% if current_summary %}
+                                    <form action="{{ url_for('main.delete_summary_route', doc_id=document.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Reset and remove saved summary?');">
+                                        <button type="submit" style="background: transparent; border: 1px solid var(--border-warm); color: var(--text-secondary); padding: 9px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;" title="Clear saved summary">
+                                            ↺ Reset
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Alert Message -->
+                    <div id="summary-alert" class="summary-alert hidden" style="margin-bottom: 16px;"></div>
+
+                    <!-- Loading / Processing State -->
+                    <div id="summary-loading" class="summary-loading-card hidden" style="background: var(--bg-secondary); border: 1.5px dashed var(--terracotta); border-radius: var(--radius-md); padding: 24px; text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 2.2rem; animation: spin 2s linear infinite; display: inline-block;">🌿</div>
+                        <h4 class="loading-title" id="loading-step-title" style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 12px 0 6px 0;">AI Transformer Processing Document...</h4>
+                        <p class="loading-subtitle" id="loading-step-sub" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px;">
+                            Segmenting text into contextual chunks and generating abstractive summary with local HuggingFace Seq2Seq model.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; max-width: 400px; margin: 0 auto;">
+                            <div class="loading-bar-fill" id="summary-progress-bar" style="background: var(--terracotta); height: 100%; width: 45%; transition: width 0.4s ease;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Content Panel -->
+                    <div id="summary-content-panel" class="summary-content-panel {% if not current_summary %}hidden{% endif %}">
+                        {% if current_summary %}
+                            <!-- Meta Strip -->
+                            <div class="summary-meta-strip" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 16px; margin-bottom: 20px;">
+                                <div style="font-size: 0.85rem;">
+                                    <span style="color: var(--text-secondary);">Mode:</span>
+                                    <strong style="color: var(--forest-green); text-transform: capitalize;" id="stat-summary-mode">{{ current_summary.summary_type }}</strong>
+                                </div>
+                                <div style="font-size: 0.85rem;">
+                                    <span style="color: var(--text-secondary);">Model:</span>
+                                    <span style="font-family: monospace; color: var(--text-primary);" id="stat-summary-model">{{ current_summary.model_name }}</span>
+                                </div>
+                                <div style="font-size: 0.85rem;">
+                                    <span style="color: var(--text-secondary);">Summary Length:</span>
+                                    <strong id="stat-summary-words">{{ current_summary.summary_text.split()|length }} words</strong>
+                                </div>
+                                {% if document.total_words > 0 %}
+                                    {% set red_pct = ((1.0 - (current_summary.summary_text.split()|length / document.total_words)) * 100)|round(1) %}
+                                    <div style="font-size: 0.85rem; background: rgba(130, 150, 107, 0.2); color: var(--forest-green); padding: 2px 10px; border-radius: 12px; font-weight: 700;">
+                                        ⏱️ ~{{ red_pct if red_pct > 0 else 0 }}% reading time saved
+                                    </div>
+                                {% endif %}
+                                <div style="margin-left: auto;">
+                                    <button type="button" id="btn-copy-summary" style="background: #fff; border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+                                        📋 Copy Summary
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabs Bar -->
+                            <div class="summary-tabs" role="tablist" style="display: flex; gap: 8px; border-bottom: 1.5px solid var(--border-warm); margin-bottom: 20px; overflow-x: auto;">
+                                <button type="button" class="summary-tab active" role="tab" id="tab-btn-summary-text" data-tab="tab-summary-text" style="background: transparent; border: none; border-bottom: 3px solid var(--terracotta); padding: 10px 16px; font-weight: 700; color: var(--text-primary); cursor: pointer;">
+                                    📝 Summary
+                                </button>
+                                <button type="button" class="summary-tab" role="tab" id="tab-btn-key-concepts" data-tab="tab-key-concepts" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                    💡 Key Concepts ({{ current_summary.key_concepts|length if current_summary.key_concepts else 0 }})
+                                </button>
+                                <button type="button" class="summary-tab" role="tab" id="tab-btn-exam-points" data-tab="tab-exam-points" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                    🎯 Exam Points ({{ current_summary.exam_points|length if current_summary.exam_points else 0 }})
+                                </button>
+                                <button type="button" class="summary-tab" role="tab" id="tab-btn-keywords" data-tab="tab-keywords" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                    🏷️ Keywords ({{ current_summary.keywords|length if current_summary.keywords else 0 }})
+                                </button>
+                                {% if current_summary.chapter_summaries %}
+                                <button type="button" class="summary-tab" role="tab" id="tab-btn-chapters" data-tab="tab-chapters" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                    📖 Chapter Breakdown ({{ current_summary.chapter_summaries|length }})
+                                </button>
+                                {% endif %}
+                                {% if current_summary.topics %}
+                                <button type="button" class="summary-tab" role="tab" id="tab-btn-topics" data-tab="tab-topics" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                    📂 Topics
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Tab 1: Summary Text -->
+                            <div class="tab-pane active" id="tab-summary-text" role="tabpanel">
+                                <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-md); padding: 28px 32px; box-shadow: var(--shadow-sm); line-height: 1.8; font-size: 1.05rem; color: var(--text-primary);">
+                                    <div id="summary-prose-container">
+                                        {% for paragraph in current_summary.summary_text.split('\n\n') %}
+                                            {% if paragraph.strip() %}
+                                                <p style="margin-bottom: 16px;">{{ paragraph.strip() }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: Key Concepts & Definitions -->
+                            <div class="tab-pane hidden" id="tab-key-concepts" role="tabpanel">
+                                <div class="concepts-grid" id="concepts-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                    {% if current_summary.key_concepts %}
+                                        {% for c in current_summary.key_concepts %}
+                                            <div style="background: #fff; border: 1px solid var(--border-warm); border-left: 4px solid var(--terracotta); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                                    <span style="font-size: 0.7rem; font-weight: 700; background: rgba(201, 111, 72, 0.15); color: var(--terracotta); padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Concept</span>
+                                                    <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0;">{{ c.term }}</h4>
+                                                </div>
+                                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.6;">{{ c.definition }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p style="color: var(--text-secondary);">No explicit definition patterns identified in this text.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: Exam Points -->
+                            <div class="tab-pane hidden" id="tab-exam-points" role="tabpanel">
+                                <div class="exam-points-list" id="exam-points-container" style="display: flex; flex-direction: column; gap: 12px;">
+                                    {% if current_summary.exam_points %}
+                                        {% for pt in current_summary.exam_points %}
+                                            <div style="display: flex; gap: 14px; background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 14px 18px; align-items: flex-start;">
+                                                <div style="background: var(--terracotta); color: #fff; font-weight: 800; font-size: 0.85rem; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                    {{ loop.index }}
+                                                </div>
+                                                <div style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.6;">{{ pt }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p style="color: var(--text-secondary);">No exam-specific indicator sentences detected.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Tab 4: Keywords -->
+                            <div class="tab-pane hidden" id="tab-keywords" role="tabpanel">
+                                <div class="keywords-chips-container" id="keywords-chips-container" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                    {% if current_summary.keywords %}
+                                        {% for kw in current_summary.keywords %}
+                                            <span style="background: #fff; border: 1px solid var(--border-warm); color: var(--forest-green); padding: 6px 14px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" title="Click to copy" onclick="navigator.clipboard.writeText('{{ kw }}')">
+                                                🏷️ {{ kw }}
+                                            </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p style="color: var(--text-secondary);">No keywords extracted.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Tab 5: Chapter Breakdown -->
+                            <div class="tab-pane hidden" id="tab-chapters" role="tabpanel">
+                                <div class="chapters-list" id="chapters-list-container" style="display: flex; flex-direction: column; gap: 14px;">
+                                    {% if current_summary.chapter_summaries %}
+                                        {% for item in current_summary.chapter_summaries %}
+                                            <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                    <span style="background: var(--bg-warm); font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; color: var(--forest-green);">{{ item.section }}</span>
+                                                    <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ item.word_count }} words</span>
+                                                </div>
+                                                <p style="font-size: 0.92rem; color: var(--text-primary); margin: 0; line-height: 1.6;">{{ item.summary }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Tab 6: Topics -->
+                            <div class="tab-pane hidden" id="tab-topics" role="tabpanel">
+                                <div class="topics-outline-list" id="topics-outline-container" style="display: flex; flex-direction: column; gap: 14px;">
+                                    {% if current_summary.topics %}
+                                        {% for t in current_summary.topics %}
+                                            <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0 0 10px 0;">{{ t.topic }}</h4>
+                                                {% if t.subtopics %}
+                                                    <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+                                                        {% for sub in t.subtopics %}
+                                                            <li>{{ sub }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Placeholder -->
+                            <div class="summary-empty-placeholder" id="summary-empty-placeholder" style="background: var(--bg-secondary); border: 1.5px dashed var(--border-warm); border-radius: var(--radius-md); padding: 48px 32px; text-align: center;">
+                                <div style="font-size: 2.8rem; margin-bottom: 12px;">🌿</div>
+                                <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin-bottom: 6px;">No Summary Generated Yet</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px;">
+                                    Select your preferred summary mode above and click <strong>Generate Summary</strong> to process the document with our local HuggingFace Seq2Seq transformer.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <!-- Extracted Pages Section (Clean deckled cards) -->
+                <section class="pages-section" style="margin-bottom: 40px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+                        <div>
+                            <div class="editorial-tagline">Source Archive Material</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.6rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Extracted Text Content (Page by Page)
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">Text segmented and indexed per document page using PyMuPDF</p>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Total Pages: <strong>{{ document.total_pages }}</strong>
+                        </div>
+                    </div>
+
+                    {% if pages %}
+                        <div class="pages-list" id="pages-list" style="display: flex; flex-direction: column; gap: 20px;">
+                            {% for page in pages %}
+                                <div class="editorial-card page-card" id="page-{{ page.page_number }}" style="background: #fff;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px; margin-bottom: 14px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="page-number-pill" style="background: var(--bg-warm); color: var(--forest-green); border: 1px solid var(--border-warm); padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 0.8rem;">
+                                                Page {{ page.page_number }} of {{ document.total_pages }}
+                                            </span>
+                                            <span class="page-words-tag" style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">
+                                                {{ page.extracted_text.split()|length }} words
+                                            </span>
+                                        </div>
+                                        <button type="button" class="btn-copy-page" data-page="{{ page.page_number }}" style="background: transparent; border: 1px solid var(--border-warm); padding: 5px 12px; border-radius: 14px; font-size: 0.78rem; cursor: pointer; color: var(--text-secondary);" title="Copy page text to clipboard">
+                                            📋 Copy Page
+                                        </button>
+                                    </div>
+                                    <div class="page-card-content">
+                                        {% if page.extracted_text and page.extracted_text.strip() %}
+                                            <pre class="page-text-block" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; margin: 0; background: var(--bg-warm); padding: 18px 20px; border-radius: var(--radius-sm); border: 1px solid rgba(0,0,0,0.04);">{{ page.extracted_text }}</pre>
+                                        {% else %}
+                                            <div style="color: var(--text-secondary); font-style: italic; padding: 16px 0;">
+                                                (No extractable text found on this page)
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="editorial-card" style="text-align: center; padding: 40px;">
+                            <h3 style="font-family: var(--font-heading); color: var(--text-primary);">No Pages Extracted</h3>
+                            <p style="color: var(--text-secondary);">No page content was saved for this document.</p>
+                        </div>
+                    {% endif %}
+                </section>
+            </main>
+
+            <!-- FOOTER -->
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    /**
+     * OCR Re-process: triggers Tesseract OCR on a scanned document via POST.
+     * Updates the page without full reload on success.
+     */
+    async function runOcrReprocess(docId) {
+        const btn = document.getElementById('btn-run-ocr');
+        const banner = document.getElementById('ocr-banner');
+        if (!btn) return;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Running OCR…';
+        btn.style.opacity = '0.7';
+
+        try {
+            const resp = await fetch(`/document/${docId}/reprocess-ocr`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                // Show success state and reload to reflect new word count / status
+                btn.textContent = '✓ OCR Complete – Reloading…';
+                btn.style.background = '#2d6a4f';
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                btn.disabled = false;
+                btn.textContent = '🔍 Run OCR';
+                btn.style.opacity = '1';
+
+                const errDiv = document.createElement('div');
+                errDiv.style.cssText = 'margin-top: 10px; color: #c9443b; font-size: 0.82rem; font-weight: 600;';
+                errDiv.textContent = '⚠️ OCR failed: ' + (data.error || 'Unknown error.');
+                if (banner) banner.appendChild(errDiv);
+
+                // Show Tesseract install instructions if provided
+                if (data.install_instructions) {
+                    const pre = document.createElement('pre');
+                    pre.style.cssText = 'margin-top: 10px; font-size: 0.78rem; background: #fff8ed; padding: 12px; border-radius: 8px; border: 1px solid #e8c77a; white-space: pre-wrap; color: #5a4015;';
+                    pre.textContent = data.install_instructions;
+                    if (banner) banner.appendChild(pre);
+                }
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.textContent = '🔍 Run OCR';
+            btn.style.opacity = '1';
+            console.error('OCR reprocess error:', err);
+        }
+    }
+    </script>
+</body>
+</html>

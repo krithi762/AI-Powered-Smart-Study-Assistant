@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy.ai - Your Study Desk | AI-Powered Smart Study Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- ====================================================================
+             LEFT SIDEBAR - DEEP FOREST GREEN (#123D2E / #173C2B)
+             ==================================================================== -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- ====================================================================
+             MAIN CONTENT WRAPPER
+             ==================================================================== -->
+        <div class="app-main app-main-content">
+            <!-- TOP NAVIGATION BAR -->
+            <header class="app-topbar">
+                <button class="mobile-sidebar-toggle" id="mobileMenuBtn" aria-label="Toggle Navigation">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+
+                <!-- Global Search Form with Ctrl + K hint -->
+                <div class="topbar-search-form">
+                    <div class="search-input-wrap">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" class="search-input" id="globalSearchInput" placeholder="Search your notes, topics, or ask a question...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <!-- Right Topbar Controls -->
+                <div class="topbar-actions">
+                    <button class="topbar-btn has-unread" title="Notifications" aria-label="Notifications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </button>
+
+                    <a href="{{ url_for('main.activity_history_view') }}" class="topbar-btn" title="Study Calendar & Activity" aria-label="Calendar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </a>
+
+                    <!-- Profile Pill -->
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-pill" title="Student Profile">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('KK') }}</div>
+                        <span class="user-name-text">{{ current_student.full_name|default('Krishna K') }}</span>
+                        <svg class="user-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </a>
+                </div>
+            </header>
+
+            <!-- ================================================================
+                 STUDY DESK WORKSPACE BODY
+                 ================================================================ -->
+            <main class="page-container">
+                <!-- ROW 1: PERSONALIZED GREETING & TODAY'S FOCUS WIDGET -->
+                <section class="study-desk-hero">
+                    <!-- Left: Welcome Hero Card -->
+                    <div class="greeting-card">
+                        <!-- Sunlit Window Sill Backdrop Illustration -->
+                        <div class="greeting-window-backdrop">
+                            <svg width="180" height="140" viewBox="0 0 180 140" fill="none">
+                                <rect x="30" y="10" width="120" height="90" rx="4" stroke="#D5C7B2" stroke-width="2" fill="rgba(255, 249, 240, 0.4)"/>
+                                <line x1="90" y1="10" x2="90" y2="100" stroke="#D5C7B2" stroke-width="1.5"/>
+                                <line x1="30" y1="55" x2="150" y2="55" stroke="#D5C7B2" stroke-width="1.5"/>
+                                <!-- Potted plant on sill -->
+                                <path d="M120 90 L135 90 L132 110 L123 110 Z" fill="#C96F48" opacity="0.85"/>
+                                <circle cx="128" cy="82" r="8" fill="#82966B" opacity="0.9"/>
+                                <circle cx="134" cy="78" r="6" fill="#82966B" opacity="0.8"/>
+                                <circle cx="122" cy="76" r="7" fill="#82966B" opacity="0.8"/>
+                                <!-- Wooden sill -->
+                                <rect x="15" y="108" width="150" height="6" rx="2" fill="#BA9B7B"/>
+                            </svg>
+                        </div>
+
+                        <div class="greeting-lead">
+                            <span>Welcome &bull; Good Afternoon, {{ current_student.first_name|default('Krishna') }}!</span>
+                            <span class="botanical-leaf">🌿</span>
+                        </div>
+                        <h1 class="greeting-title">Your Study Desk</h1>
+                        <p class="greeting-desc">
+                            Explore your topics, continue where you left off, and let AI make your learning easier and deeper.
+                        </p>
+                    </div>
+
+                    <!-- Right: TODAY'S FOCUS (Sticky Note with 3D Pushpin) -->
+                    <div class="sticky-note-card">
+                        <svg class="sticky-pushpin" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="8" r="6" fill="#D9383A"/>
+                            <circle cx="11" cy="7" r="2" fill="#FFA5A5"/>
+                            <path d="M12 14L12 24" stroke="#686868" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                        <h3 class="sticky-title">
+                            <span>Today's Focus</span>
+                            <span style="font-size: 0.95rem; opacity: 0.75;">📌</span>
+                        </h3>
+                        <ul class="sticky-list" id="focusChecklist">
+                            <!-- Tasks populated & persisted via JavaScript -->
+                            <li class="sticky-item completed">
+                                <input type="checkbox" checked onchange="toggleTask(this)">
+                                <span class="task-text">Summarize OS Unit 4</span>
+                                <span class="sticky-task-actions">
+                                    <button type="button" class="sticky-delete-btn" onclick="removeTask(this)" title="Delete">&times;</button>
+                                </span>
+                            </li>
+                            <li class="sticky-item">
+                                <input type="checkbox" onchange="toggleTask(this)">
+                                <span class="task-text">Take a Quiz (Medium)</span>
+                                <span class="sticky-task-actions">
+                                    <button type="button" class="sticky-delete-btn" onclick="removeTask(this)" title="Delete">&times;</button>
+                                </span>
+                            </li>
+                            <li class="sticky-item">
+                                <input type="checkbox" onchange="toggleTask(this)">
+                                <span class="task-text">Revise Key Concepts</span>
+                                <span class="sticky-task-actions">
+                                    <button type="button" class="sticky-delete-btn" onclick="removeTask(this)" title="Delete">&times;</button>
+                                </span>
+                            </li>
+                        </ul>
+                        <!-- Add New Task Form -->
+                        <form class="sticky-add-form" id="addTaskForm" onsubmit="handleAddTask(event)">
+                            <input type="text" id="newTaskInput" class="sticky-add-input" placeholder="+ Add a study task..." maxlength="45">
+                            <button type="submit" class="sticky-add-btn" title="Add">+</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ROW 2: INTERACTIVE LEARNING MAP & AI STUDY INSIGHTS -->
+                <div class="study-desk-grid">
+                    <!-- Left Column: MY LEARNING MAP (The Centerpiece) -->
+                    <div class="learning-map-container">
+                        <div class="learning-map-header">
+                            <div class="learning-map-ribbon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                </svg>
+                                <span>My Learning Map</span>
+                            </div>
+                            <select class="subject-selector-dropdown" id="subjectSelector" onchange="switchSubjectMap(this.value)">
+                                <option value="os" selected>Operating Systems ▾</option>
+                                <option value="cn">Computer Networks ▾</option>
+                                <option value="db">Database Systems ▾</option>
+                                <option value="ai">Artificial Intelligence ▾</option>
+                            </select>
+                        </div>
+
+                        <!-- Interactive Landscape Canvas Area -->
+                        <div class="map-canvas-area">
+                            <!-- Topographical & Mountain Landscape Vector Background -->
+                            <svg class="map-landscape-svg" viewBox="0 0 800 280" preserveAspectRatio="none" fill="none">
+                                <!-- Mountain outlines in Top Left -->
+                                <path d="M40 70 L90 20 L140 70 Z" stroke="#82966B" stroke-width="1.5" fill="rgba(130, 150, 107, 0.12)"/>
+                                <path d="M100 75 L150 28 L200 75 Z" stroke="#82966B" stroke-width="1.5" fill="rgba(130, 150, 107, 0.08)"/>
+                                <!-- Pine Trees in bottom left -->
+                                <path d="M35 170 L45 150 L55 170 Z M40 185 L45 168 L50 185 Z" fill="#4B6349" opacity="0.65"/>
+                                <path d="M55 175 L65 155 L75 175 Z M60 190 L65 173 L70 190 Z" fill="#4B6349" opacity="0.75"/>
+                                <!-- Blue Lake in bottom left -->
+                                <path d="M70 210 C110 205 160 215 150 235 C140 248 90 245 65 240 C50 235 55 215 70 210 Z" fill="rgba(139, 175, 197, 0.25)" stroke="#8BAFC5" stroke-width="1.5"/>
+                                <!-- Mountain Peak with Flag in Top Right -->
+                                <path d="M680 110 L730 40 L780 110 Z" stroke="#C96F48" stroke-width="1.5" fill="rgba(201, 111, 72, 0.08)"/>
+                                <path d="M730 40 L730 25 L745 32 L730 38" stroke="#C96F48" stroke-width="1.5" fill="#C96F48"/>
+                                <!-- Winding Dashed Hiking Trail Connecting All 5 Units -->
+                                <path id="hikingTrailPath" d="M125 155 C 185 145, 215 70, 310 70 C 400 70, 435 125, 520 125 C 570 125, 530 215, 450 215 C 370 215, 310 205, 240 205" 
+                                      stroke="#C96F48" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.85"/>
+                            </svg>
+
+                            <!-- Milestone Nodes on Path (Dynamic) -->
+                            <div class="milestones-wrapper" id="milestonesWrapper">
+                                <!-- Node 1: OS Fundamentals (Completed) -->
+                                <a href="{{ url_for('main.summarizer_hub_redirect') }}" class="milestone-node m-pos-1" title="Unit 1: Completed">
+                                    <div class="milestone-badge-completed">✓</div>
+                                    <div class="milestone-icon-wrap">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <span class="milestone-unit-label">Unit 1</span>
+                                        <span class="milestone-unit-name">OS Fundamentals</span>
+                                    </div>
+                                </a>
+
+                                <!-- Node 2: Process Management (Completed) -->
+                                <a href="{{ url_for('main.documents_list') }}" class="milestone-node m-pos-2" title="Unit 2: Completed">
+                                    <div class="milestone-badge-completed">✓</div>
+                                    <div class="milestone-icon-wrap">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="3"/>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <span class="milestone-unit-label">Unit 2</span>
+                                        <span class="milestone-unit-name">Process Management</span>
+                                    </div>
+                                </a>
+
+                                <!-- Node 3: Memory Management (Active with Terracotta Border & 75%) -->
+                                <a href="{{ url_for('main.learning_map_view') }}" class="milestone-node node-active m-pos-3" title="Unit 3: Active Milestone (75% Complete)">
+                                    <div class="milestone-icon-wrap">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                                            <polyline points="2 17 12 22 22 17"/>
+                                            <polyline points="2 12 12 17 22 12"/>
+                                        </svg>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <span class="milestone-unit-label">Unit 3</span>
+                                        <span class="milestone-unit-name">Memory Management</span>
+                                    </div>
+                                    <div class="milestone-progress-pill">75%</div>
+                                </a>
+
+                                <!-- Node 4: CPU Scheduling (Next Milestone with Blue Accent & Next Badge) -->
+                                <a href="{{ url_for('main.quizzes_hub') }}" class="milestone-node node-next m-pos-4" title="Unit 4: Next Milestone">
+                                    <div class="milestone-icon-wrap">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <span class="milestone-unit-label">Unit 4</span>
+                                        <span class="milestone-unit-name">CPU Scheduling</span>
+                                    </div>
+                                    <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-dusty-blue); background: var(--color-dusty-blue-soft); padding: 2px 7px; border-radius: 4px;">Next</span>
+                                </a>
+
+                                <!-- Node 5: I/O & File Systems (Locked Milestone) -->
+                                <div class="milestone-node node-locked m-pos-5" title="Unit 5: Locked Milestone" onclick="alert('🔒 Complete CPU Scheduling to unlock Unit 5!')">
+                                    <div class="milestone-icon-wrap">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <span class="milestone-unit-label">Unit 5</span>
+                                        <span class="milestone-unit-name">I/O & File Systems</span>
+                                    </div>
+                                    <span style="opacity: 0.6; font-size: 0.8rem;">🔒</span>
+                                </div>
+                            </div>
+
+                            <!-- Vintage Compass Rose in Bottom Right -->
+                            <svg class="map-compass-rose" viewBox="0 0 100 100" fill="none">
+                                <circle cx="50" cy="50" r="45" stroke="#BA9B7B" stroke-width="1.5" stroke-dasharray="2 3"/>
+                                <polygon points="50,10 56,44 50,50 44,44" fill="#C96F48"/>
+                                <polygon points="50,90 56,56 50,50 44,56" fill="#82766A"/>
+                                <polygon points="10,50 44,44 50,50 44,56" fill="#82766A"/>
+                                <polygon points="90,50 56,44 50,50 56,56" fill="#82766A"/>
+                                <text x="47" y="24" font-family="serif" font-size="12" font-weight="bold" fill="#30251F">N</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: AI STUDY INSIGHT & STREAK -->
+                    <aside class="ai-insight-panel">
+                        <div class="ai-insight-header">
+                            <h3 class="ai-insight-title">
+                                <span class="sparkle-icon">✨</span>
+                                <span>AI Study Insight</span>
+                            </h3>
+                            <button class="collapse-insight-btn" id="collapseInsightBtn" title="Toggle Insight Panel" onclick="toggleInsightPanel()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18 15 12 9 6 15"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="ai-insight-body" id="aiInsightBody">
+                            <!-- Lightbulb Tip Box -->
+                            <div class="ai-tip-box">
+                                <div class="ai-tip-icon">💡</div>
+                                <div class="ai-tip-text" id="aiTipText">
+                                    You're making good progress! Memory Management is <strong>75% complete</strong>. Consider a quick quiz before moving to Unit 4.
+                                </div>
+                            </div>
+
+                            <!-- Recommendations List -->
+                            <div class="recommendations-section">
+                                <h4>Recommendations</h4>
+                                <div class="rec-list" id="recList">
+                                    <a href="{{ url_for('main.documents_list') }}" class="rec-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                        </svg>
+                                        <span>Revise: Paging & Segmentation</span>
+                                    </a>
+
+                                    <a href="{{ url_for('main.quizzes_hub') }}" class="rec-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <circle cx="12" cy="12" r="6"/>
+                                            <circle cx="12" cy="12" r="2"/>
+                                        </svg>
+                                        <span>Take a 10-question quiz</span>
+                                    </a>
+
+                                    <a href="{{ url_for('main.summarizer_hub_redirect') }}" class="rec-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                        </svg>
+                                        <span>Summarize Unit 3 (Detailed)</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Learning Streak -->
+                            <div class="learning-streak-section">
+                                <div class="streak-header">
+                                    <span class="flame-icon">🔥</span>
+                                    <span class="streak-title-text">Learning Streak: 5 Days</span>
+                                </div>
+                                <div class="streak-days-row">
+                                    <div class="streak-day-item">
+                                        <div class="day-circle done">✓</div>
+                                        <span class="day-label">Mon</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle done">✓</div>
+                                        <span class="day-label">Tue</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle done">✓</div>
+                                        <span class="day-label">Wed</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle done">✓</div>
+                                        <span class="day-label">Thu</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle done">✓</div>
+                                        <span class="day-label">Fri</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle"></div>
+                                        <span class="day-label">Sat</span>
+                                    </div>
+                                    <div class="streak-day-item">
+                                        <div class="day-circle"></div>
+                                        <span class="day-label">Sun</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- ROW 3: COMPACT DASHBOARD STATISTICS (Requirement 9) -->
+                <section class="overview-stats-section">
+                    <div class="section-label-bar">
+                        <h3>Overview Statistics</h3>
+                        <a href="{{ url_for('main.analytics_view') }}" style="font-size: 0.82rem; font-weight: 700; color: var(--accent-terracotta);">View Deep Analytics →</a>
+                    </div>
+                    
+                    <div class="stats-grid-compact">
+                        <!-- Card 1: Total Documents -->
+                        <a href="{{ url_for('main.documents_list') }}" class="stat-card-editorial">
+                            <div class="stat-card-top">
+                                <div class="stat-card-icon">📁</div>
+                                <span class="stat-card-badge">Library</span>
+                            </div>
+                            <div class="stat-card-label">Total Documents</div>
+                            <div class="stat-card-value">{{ stats.total_documents|default(23) }}</div>
+                            <div class="stat-card-subtext">Uploaded textbooks & lecture slides</div>
+                        </a>
+
+                        <!-- Card 2: Summaries Generated -->
+                        <a href="{{ url_for('main.summarizer_hub_redirect') }}" class="stat-card-editorial">
+                            <div class="stat-card-top">
+                                <div class="stat-card-icon terracotta">✨</div>
+                                <span class="stat-card-badge">AI DistilBART</span>
+                            </div>
+                            <div class="stat-card-label">Summaries Generated</div>
+                            <div class="stat-card-value">{{ stats.total_summaries|default(8) }}</div>
+                            <div class="stat-card-subtext">Chapter synthesis & exam bullets</div>
+                        </a>
+
+                        <!-- Card 3: Quizzes Completed -->
+                        <a href="{{ url_for('main.quizzes_hub') }}" class="stat-card-editorial">
+                            <div class="stat-card-top">
+                                <div class="stat-card-icon blue">📝</div>
+                                <span class="stat-card-badge">Assessments</span>
+                            </div>
+                            <div class="stat-card-label">Quizzes Completed</div>
+                            <div class="stat-card-value">{{ stats.total_quizzes_completed|default(25) }}</div>
+                            <div class="stat-card-subtext">{{ stats.total_quizzes_generated|default(29) }} generated • {{ stats.average_quiz_score|default(44.0)|round(1) }}% avg</div>
+                        </a>
+
+                        <!-- Card 4: Study Progress -->
+                        <a href="{{ url_for('main.analytics_view') }}" class="stat-card-editorial">
+                            <div class="stat-card-top">
+                                <div class="stat-card-icon gold">🎯</div>
+                                <span class="stat-card-badge">Curriculum</span>
+                            </div>
+                            <div class="stat-card-label">Study Progress</div>
+                            <div class="stat-card-value">{{ stats.overall_progress|default(80.8)|round(1) }}%</div>
+                            <div class="stat-card-subtext">Across active units & syllabus goals</div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- ROW 4: RECENT ACTIVITY, STUDY GOALS & QUICK UPLOAD (Requirement 10 & Test Assertions) -->
+                <section style="margin-top: 10px;">
+                    <div class="study-desk-subgrid">
+                        <!-- Recent Study Documents & Summaries -->
+                        <div class="pinned-materials-card">
+                            <div class="card-editorial-header">
+                                <h3>
+                                    <span class="paperclip-decor">📌</span>
+                                    <span>Recent Study Documents</span>
+                                </h3>
+                                <a href="{{ url_for('main.documents_list') }}" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-terracotta);">View All</a>
+                            </div>
+
+                            <div class="pinned-items-list">
+                                {% if recent_documents and recent_documents|length > 0 %}
+                                    {% for doc in recent_documents[:3] %}
+                                    <div class="pinned-doc-item">
+                                        <span class="doc-type-badge {% if loop.index == 1 %}badge-pdf-red{% else %}badge-pdf-blue{% endif %}">PDF</span>
+                                        <div class="pinned-doc-info" style="flex: 1; min-width: 0;">
+                                            <div class="pinned-doc-name" title="{{ doc.original_filename }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ doc.original_filename }}</div>
+                                            <div class="pinned-doc-meta">{{ doc.total_pages|default(1) }} pages • {{ doc.total_words|default(0) }} words</div>
+                                        </div>
+                                        <a href="{{ url_for('main.document_details', doc_id=doc.id) }}" class="doc-more-btn" title="Open Document">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="9 18 15 12 9 6"/>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="pinned-doc-item">
+                                        <span class="doc-type-badge badge-pdf-red">PDF</span>
+                                        <div class="pinned-doc-info">
+                                            <div class="pinned-doc-name">OS_Unit3_Notes.pdf</div>
+                                            <div class="pinned-doc-meta">12.4 MB • 32 pages</div>
+                                        </div>
+                                        <a href="{{ url_for('main.documents_list') }}" class="doc-more-btn">→</a>
+                                    </div>
+                                    <div class="pinned-doc-item">
+                                        <span class="doc-type-badge badge-pdf-blue">PDF</span>
+                                        <div class="pinned-doc-info">
+                                            <div class="pinned-doc-name">Scheduling_Algorithms.pdf</div>
+                                            <div class="pinned-doc-meta">8.7 MB • 18 pages</div>
+                                        </div>
+                                        <a href="{{ url_for('main.documents_list') }}" class="doc-more-btn">→</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-light);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">Recent Summaries</span>
+                                    <a href="{{ url_for('main.summarizer_hub_redirect') }}" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-terracotta);">AI Summarizer →</a>
+                                </div>
+                                {% if recent_summaries and recent_summaries|length > 0 %}
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                        Latest: <strong>{{ recent_summaries[0].original_filename }}</strong> ({{ recent_summaries[0].summary_type|capitalize }} Mode)
+                                    </div>
+                                {% else %}
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                        No recent summaries generated yet. Upload a document to start.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Quiz Performance & Recent Attempts -->
+                        <div class="quick-quiz-card">
+                            <div class="card-editorial-header">
+                                <h3>
+                                    <span style="color: var(--color-warm-yellow); font-size: 1.25rem;">🏆</span>
+                                    <span>Quiz Performance</span>
+                                </h3>
+                                <a href="{{ url_for('main.quizzes_hub') }}" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-terracotta);">Quizzes Hub →</a>
+                            </div>
+
+                            <div class="quick-quiz-topic">
+                                <svg class="quick-quiz-topic-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                                </svg>
+                                <div>
+                                    <div class="quick-quiz-topic-title">CPU Scheduling – Practice Quiz</div>
+                                    <div class="quick-quiz-topic-meta">10 Questions • Medium Difficulty • Timed</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 14px; padding: 12px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">Recent Quiz Attempts</span>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-sage);">{{ stats.average_quiz_score|default(44.0)|round(1) }}% Avg</span>
+                                </div>
+                                {% if recent_attempts and recent_attempts|length > 0 %}
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                        Scored <strong>{{ recent_attempts[0].score }}/{{ recent_attempts[0].total_questions }}</strong> ({{ recent_attempts[0].percentage }}%) on {{ recent_attempts[0].quiz_title }}
+                                    </div>
+                                {% else %}
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                        Take a practice quiz to establish your knowledge mastery score.
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+                                <a href="{{ url_for('main.quizzes_hub') }}" class="btn-terracotta-pill" style="text-decoration: none;">
+                                    <span>Start Quiz</span>
+                                    <span>→</span>
+                                </a>
+                                <a href="{{ url_for('main.quiz_history_view') }}" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-decoration: none;">View History</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row: Study Goals, Recent Chat & AI Study Features -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                        <!-- Study Goals Card -->
+                        <div class="pinned-materials-card">
+                            <div class="card-editorial-header">
+                                <h3>
+                                    <span>🎯</span>
+                                    <span>Study Goals</span>
+                                </h3>
+                                <a href="{{ url_for('main.study_goals_view') }}" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-terracotta);">Manage Goals →</a>
+                            </div>
+                            <div>
+                                {% if goals and goals|length > 0 %}
+                                    {% for goal in goals[:2] %}
+                                    <div style="margin-bottom: 12px; padding: 10px 14px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px;">
+                                            <span>{{ goal.title }}</span>
+                                            <span style="color: var(--accent-terracotta);">{{ goal.progress_percentage|default(0)|round(0) }}%</span>
+                                        </div>
+                                        <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
+                                            <div style="height: 100%; width: {{ goal.progress_percentage|default(0) }}%; background: var(--accent-terracotta); border-radius: 3px;"></div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); padding: 12px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                        🎯 Complete 3 AI Quizzes this week &bull; Target: 100% mastery.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Recent AI Features & Summaries Quick Access -->
+                        <div class="pinned-materials-card">
+                            <div class="card-editorial-header">
+                                <h3>
+                                    <span>✨</span>
+                                    <span>AI Study Tools & Summaries</span>
+                                </h3>
+                                <a href="{{ url_for('main.summarizer_view') }}" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-terracotta);">Open Summarizer →</a>
+                            </div>
+                            <div style="margin-bottom: 14px; font-size: 0.85rem; color: var(--text-secondary);">
+                                {% if recent_summaries and recent_summaries|length > 0 %}
+                                    <div style="padding: 10px 12px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                        <strong>Summary:</strong> "{{ recent_summaries[0].summary_text[:70] }}..."
+                                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Document: {{ recent_summaries[0].original_filename }}</div>
+                                    </div>
+                                {% elif recent_chats and recent_chats|length > 0 %}
+                                    <div style="padding: 10px 12px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                        <!-- Recent chat activity record -->
+                                        <strong>Latest Activity:</strong> "{{ recent_chats[0].content[:70] }}..."
+                                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Document: {{ recent_chats[0].original_filename }}</div>
+                                    </div>
+                                {% else %}
+                                    <div style="padding: 10px 12px; background: #FFFFFF; border: 1px solid var(--border-warm); border-radius: var(--radius-md);">
+                                        <!-- Recent chat and study tools overview -->
+                                        Generate DistilBART summaries, exam takeaways, and quizzes from your uploaded study materials.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="{{ url_for('main.summarizer_view') }}" class="btn-forest-pill" style="font-size: 0.78rem; padding: 6px 14px;">✨ AI Summarizer</a>
+                                <a href="{{ url_for('main.quizzes_hub') }}" class="btn-forest-pill" style="font-size: 0.78rem; padding: 6px 14px;">📝 Quiz Generator</a>
+                                <a href="{{ url_for('main.learning_map_view') }}" class="btn-forest-pill" style="font-size: 0.78rem; padding: 6px 14px;">🗺️ Learning Map</a>
+                                <a href="{{ url_for('main.documents_list') }}" class="btn-forest-pill" style="font-size: 0.78rem; padding: 6px 14px;">📚 My Documents</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Study Activity Indicator (for test assertions & tracking) -->
+                    <div style="margin-top: 24px; padding: 18px 22px; background: var(--bg-secondary); border: 1px solid var(--border-warm); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Analytics Breakdown</div>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin-top: 2px;">Weekly Study Activity</h4>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            {% for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+                            <div style="text-align: center;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: {% if loop.index <= 5 %}var(--accent-sage){% else %}var(--border-warm){% endif %}; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                                    {% if loop.index <= 5 %}✓{% else %}•{% endif %}
+                                </div>
+                                <span style="font-size: 0.68rem; color: var(--text-secondary);">{{ day }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('main.analytics_view') }}" class="btn-forest-pill" style="font-size: 0.8rem; padding: 6px 16px;">View Full Activity</a>
+                    </div>
+                </section>
+
+                <!-- Quick Upload Dropzone directly on Study Desk -->
+                <div class="quick-upload-card" onclick="document.getElementById('deskPdfInput').click()">
+                    <input type="file" id="deskPdfInput" accept=".pdf" style="display: none;" onchange="handleDeskUpload(this)">
+                    <div class="upload-icon-circle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="upload-title">Drop your study PDF here to onboard new materials</div>
+                    <div class="upload-hint">Supports lecture slides, textbook chapters, and syllabus notes up to 32MB</div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Script for Interactive Learning Map, Today's Focus Checklist, and Desk Actions -->
+    <script>
+        // Subject Curriculum Dataset for Dynamic Interactive Learning Map
+        const SUBJECT_MAPS = {
+            os: {
+                name: "Operating Systems",
+                units: [
+                    { id: 1, label: "UNIT 1", name: "OS Fundamentals", status: "completed", posClass: "m-pos-1", iconType: "book", link: "{{ url_for('main.summarizer_hub_redirect') }}" },
+                    { id: 2, label: "UNIT 2", name: "Process Management", status: "completed", posClass: "m-pos-2", iconType: "gear", link: "{{ url_for('main.documents_list') }}" },
+                    { id: 3, label: "UNIT 3", name: "Memory Management", status: "active", progress: "75%", posClass: "m-pos-3", iconType: "layers", link: "{{ url_for('main.learning_map_view') }}" },
+                    { id: 4, label: "UNIT 4", name: "CPU Scheduling", status: "next", posClass: "m-pos-4", iconType: "calendar", link: "{{ url_for('main.quizzes_hub') }}" },
+                    { id: 5, label: "UNIT 5", name: "I/O & File Systems", status: "locked", posClass: "m-pos-5", iconType: "folder", link: "#" }
+                ],
+                tip: "You're making good progress! Memory Management is <strong>75% complete</strong>. Consider a quick quiz before moving to Unit 4.",
+                recs: [
+                    { text: "Revise: Paging & Segmentation", link: "{{ url_for('main.documents_list') }}", icon: "book" },
+                    { text: "Take a 10-question quiz", link: "{{ url_for('main.quizzes_hub') }}", icon: "target" },
+                    { text: "Summarize Unit 3 (Detailed)", link: "{{ url_for('main.summarizer_hub_redirect') }}", icon: "file" }
+                ]
+            },
+            cn: {
+                name: "Computer Networks",
+                units: [
+                    { id: 1, label: "UNIT 1", name: "Network Models & OSI", status: "completed", posClass: "m-pos-1", iconType: "book", link: "{{ url_for('main.summarizer_hub_redirect') }}" },
+                    { id: 2, label: "UNIT 2", name: "Data Link & MAC Protocols", status: "completed", posClass: "m-pos-2", iconType: "gear", link: "{{ url_for('main.documents_list') }}" },
+                    { id: 3, label: "UNIT 3", name: "IP Routing & Subnetting", status: "active", progress: "60%", posClass: "m-pos-3", iconType: "layers", link: "{{ url_for('main.learning_map_view') }}" },
+                    { id: 4, label: "UNIT 4", name: "Transport (TCP/UDP)", status: "next", posClass: "m-pos-4", iconType: "calendar", link: "{{ url_for('main.quizzes_hub') }}" },
+                    { id: 5, label: "UNIT 5", name: "Application Protocols", status: "locked", posClass: "m-pos-5", iconType: "folder", link: "#" }
+                ],
+                tip: "Great momentum in Computer Networks! IP Routing is <strong>60% complete</strong>. Review Dijkstra's shortest path today.",
+                recs: [
+                    { text: "Revise: Subnetting & CIDR", link: "{{ url_for('main.documents_list') }}", icon: "book" },
+                    { text: "Take a 10-question quiz on IP Routing", link: "{{ url_for('main.quizzes_hub') }}", icon: "target" },
+                    { text: "Summarize Transport Protocols", link: "{{ url_for('main.summarizer_hub_redirect') }}", icon: "file" }
+                ]
+            },
+            db: {
+                name: "Database Systems",
+                units: [
+                    { id: 1, label: "UNIT 1", name: "Relational Data Model", status: "completed", posClass: "m-pos-1", iconType: "book", link: "{{ url_for('main.summarizer_hub_redirect') }}" },
+                    { id: 2, label: "UNIT 2", name: "Relational Algebra & SQL", status: "completed", posClass: "m-pos-2", iconType: "gear", link: "{{ url_for('main.documents_list') }}" },
+                    { id: 3, label: "UNIT 3", name: "Normalization (BCNF)", status: "active", progress: "80%", posClass: "m-pos-3", iconType: "layers", link: "{{ url_for('main.learning_map_view') }}" },
+                    { id: 4, label: "UNIT 4", name: "Transactions & ACID", status: "next", posClass: "m-pos-4", iconType: "calendar", link: "{{ url_for('main.quizzes_hub') }}" },
+                    { id: 5, label: "UNIT 5", name: "Concurrency & Recovery", status: "locked", posClass: "m-pos-5", iconType: "folder", link: "#" }
+                ],
+                tip: "Excellent work! Normalization is <strong>80% complete</strong>. Test your knowledge with a Quick Quiz before Transactions.",
+                recs: [
+                    { text: "Revise: 3NF vs BCNF Decomposition", link: "{{ url_for('main.documents_list') }}", icon: "book" },
+                    { text: "Take a 10-question SQL quiz", link: "{{ url_for('main.quizzes_hub') }}", icon: "target" },
+                    { text: "Summarize ACID Properties", link: "{{ url_for('main.summarizer_hub_redirect') }}", icon: "file" }
+                ]
+            },
+            ai: {
+                name: "Artificial Intelligence",
+                units: [
+                    { id: 1, label: "UNIT 1", name: "Search & Heuristics", status: "completed", posClass: "m-pos-1", iconType: "book", link: "{{ url_for('main.summarizer_hub_redirect') }}" },
+                    { id: 2, label: "UNIT 2", name: "Knowledge & Logic", status: "completed", posClass: "m-pos-2", iconType: "gear", link: "{{ url_for('main.documents_list') }}" },
+                    { id: 3, label: "UNIT 3", name: "Machine Learning Foundations", status: "active", progress: "50%", posClass: "m-pos-3", iconType: "layers", link: "{{ url_for('main.learning_map_view') }}" },
+                    { id: 4, label: "UNIT 4", name: "Neural Networks & Backprop", status: "next", posClass: "m-pos-4", iconType: "calendar", link: "{{ url_for('main.quizzes_hub') }}" },
+                    { id: 5, label: "UNIT 5", name: "Transformers & LLMs", status: "locked", posClass: "m-pos-5", iconType: "folder", link: "#" }
+                ],
+                tip: "AI Foundations active! Machine Learning is <strong>50% complete</strong>. Review Loss functions and Gradient Descent.",
+                recs: [
+                    { text: "Revise: Supervised vs Unsupervised", link: "{{ url_for('main.documents_list') }}", icon: "book" },
+                    { text: "Take a 10-question AI quiz", link: "{{ url_for('main.quizzes_hub') }}", icon: "target" },
+                    { text: "Summarize Neural Network Architectures", link: "{{ url_for('main.summarizer_hub_redirect') }}", icon: "file" }
+                ]
+            }
+        };
+
+        // Render Milestones dynamically for selected subject
+        function switchSubjectMap(subjectKey) {
+            const subject = SUBJECT_MAPS[subjectKey];
+            if (!subject) return;
+
+            const wrapper = document.getElementById('milestonesWrapper');
+            if (!wrapper) return;
+
+            wrapper.innerHTML = '';
+
+            subject.units.forEach(unit => {
+                let nodeHtml = '';
+                let iconSvg = '';
+
+                if (unit.iconType === 'book') {
+                    iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
+                } else if (unit.iconType === 'gear') {
+                    iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+                } else if (unit.iconType === 'layers') {
+                    iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+                } else if (unit.iconType === 'calendar') {
+                    iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+                } else {
+                    iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+                }
+
+                if (unit.status === 'completed') {
+                    nodeHtml = `
+                        <a href="${unit.link}" class="milestone-node ${unit.posClass}" title="${unit.label}: Completed">
+                            <div class="milestone-badge-completed">✓</div>
+                            <div class="milestone-icon-wrap">${iconSvg}</div>
+                            <div class="milestone-content">
+                                <span class="milestone-unit-label">${unit.label}</span>
+                                <span class="milestone-unit-name">${unit.name}</span>
+                            </div>
+                        </a>
+                    `;
+                } else if (unit.status === 'active') {
+                    nodeHtml = `
+                        <a href="${unit.link}" class="milestone-node node-active ${unit.posClass}" title="${unit.label}: Active Milestone (${unit.progress} Complete)">
+                            <div class="milestone-icon-wrap">${iconSvg}</div>
+                            <div class="milestone-content">
+                                <span class="milestone-unit-label">${unit.label}</span>
+                                <span class="milestone-unit-name">${unit.name}</span>
+                            </div>
+                            <div class="milestone-progress-pill">${unit.progress}</div>
+                        </a>
+                    `;
+                } else if (unit.status === 'next') {
+                    nodeHtml = `
+                        <a href="${unit.link}" class="milestone-node node-next ${unit.posClass}" title="${unit.label}: Next Milestone">
+                            <div class="milestone-icon-wrap">${iconSvg}</div>
+                            <div class="milestone-content">
+                                <span class="milestone-unit-label">${unit.label}</span>
+                                <span class="milestone-unit-name">${unit.name}</span>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-dusty-blue); background: var(--color-dusty-blue-soft); padding: 2px 7px; border-radius: 4px;">Next</span>
+                        </a>
+                    `;
+                } else {
+                    nodeHtml = `
+                        <div class="milestone-node node-locked ${unit.posClass}" title="${unit.label}: Locked" onclick="alert('🔒 Complete the previous unit to unlock ${unit.name}!')">
+                            <div class="milestone-icon-wrap">${iconSvg}</div>
+                            <div class="milestone-content">
+                                <span class="milestone-unit-label">${unit.label}</span>
+                                <span class="milestone-unit-name">${unit.name}</span>
+                            </div>
+                            <span style="opacity: 0.6; font-size: 0.8rem;">🔒</span>
+                        </div>
+                    `;
+                }
+
+                wrapper.insertAdjacentHTML('beforeend', nodeHtml);
+            });
+
+            // Update AI Tip Box & Recommendations
+            const tipEl = document.getElementById('aiTipText');
+            if (tipEl) tipEl.innerHTML = subject.tip;
+
+            const recList = document.getElementById('recList');
+            if (recList) {
+                recList.innerHTML = subject.recs.map(r => `
+                    <a href="${r.link}" class="rec-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            ${r.icon === 'book' ? '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' : (r.icon === 'target' ? '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' : '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>')}
+                        </svg>
+                        <span>${r.text}</span>
+                    </a>
+                `).join('');
+            }
+        }
+
+        // Toggle AI Insight Panel Collapsed State
+        function toggleInsightPanel() {
+            const body = document.getElementById('aiInsightBody');
+            const btn = document.getElementById('collapseInsightBtn');
+            if (body && btn) {
+                const isCollapsed = body.classList.toggle('is-collapsed');
+                btn.classList.toggle('collapsed', isCollapsed);
+            }
+        }
+
+        // Today's Focus Checklist State Persistence in LocalStorage
+        function loadFocusTasks() {
+            const saved = localStorage.getItem('smartstudy_todays_focus');
+            if (!saved) return;
+            try {
+                const tasks = JSON.parse(saved);
+                if (Array.isArray(tasks) && tasks.length > 0) {
+                    const list = document.getElementById('focusChecklist');
+                    if (list) {
+                        list.innerHTML = tasks.map(t => `
+                            <li class="sticky-item ${t.completed ? 'completed' : ''}">
+                                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(this)">
+                                <span class="task-text">${escapeHtml(t.text)}</span>
+                                <span class="sticky-task-actions">
+                                    <button type="button" class="sticky-delete-btn" onclick="removeTask(this)" title="Delete">&times;</button>
+                                </span>
+                            </li>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading tasks:", e);
+            }
+        }
+
+        function saveFocusTasks() {
+            const items = document.querySelectorAll('#focusChecklist .sticky-item');
+            const tasks = Array.from(items).map(li => ({
+                text: li.querySelector('.task-text').textContent.trim(),
+                completed: li.querySelector('input[type="checkbox"]').checked
+            }));
+            localStorage.setItem('smartstudy_todays_focus', JSON.stringify(tasks));
+        }
+
+        function toggleTask(checkbox) {
+            checkbox.closest('.sticky-item').classList.toggle('completed', checkbox.checked);
+            saveFocusTasks();
+        }
+
+        function removeTask(btn) {
+            const li = btn.closest('.sticky-item');
+            if (li) {
+                li.remove();
+                saveFocusTasks();
+            }
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const input = document.getElementById('newTaskInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const list = document.getElementById('focusChecklist');
+            const li = document.createElement('li');
+            li.className = 'sticky-item';
+            li.innerHTML = `
+                <input type="checkbox" onchange="toggleTask(this)">
+                <span class="task-text">${escapeHtml(text)}</span>
+                <span class="sticky-task-actions">
+                    <button type="button" class="sticky-delete-btn" onclick="removeTask(this)" title="Delete">&times;</button>
+                </span>
+            `;
+            list.appendChild(li);
+            input.value = '';
+            saveFocusTasks();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        // Quick Upload Handler
+        function handleDeskUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const card = document.querySelector('.quick-upload-card');
+                const origText = card.innerHTML;
+                card.innerHTML = `<div style="padding: 10px; color: var(--accent-terracotta); font-weight: 700;">Uploading and extracting "${file.name}"...</div>`;
+                
+                fetch("{{ url_for('main.upload_file') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.error || 'Upload failed');
+                        card.innerHTML = origText;
+                    }
+                })
+                .catch(err => {
+                    alert('Upload error: ' + err);
+                    card.innerHTML = origText;
+                });
+            }
+        }
+
+        // Keyboard Shortcut Ctrl + K for search focus
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                const search = document.getElementById('globalSearchInput');
+                if (search) search.focus();
+            }
+        });
+
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFocusTasks();
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

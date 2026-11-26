@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extracted Text - {{ document.original_filename }} | SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input type="text" placeholder="Search text...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.document_details', doc_id=document.id) }}" class="topbar-icon-btn"
+                        title="Back to Details">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <div
+                    style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                    <a href="{{ url_for('main.document_details', doc_id=document.id) }}"
+                        style="color: var(--terracotta); text-decoration: none; font-weight: 600;">← Back to Document
+                        Details</a>
+                    <span>/</span>
+                    <span>Extracted Text</span>
+                </div>
+
+                <div class="editorial-card" style="margin-bottom: 24px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <div class="editorial-tagline">Raw Extracted Stream</div>
+                            <h1
+                                style="font-family: var(--font-heading); font-size: 1.6rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Extracted Text: {{ document.original_filename }}
+                            </h1>
+                            <p class="editorial-subtitle" style="margin: 0;">{{ document.total_pages }} Pages &bull; {{
+                                "{:,}".format(document.total_words) }} Words Total</p>
+                        </div>
+                        <button type="button" class="btn-terracotta-pill" id="btn-copy-all-text"
+                            style="cursor: pointer;">
+                            <span id="btn-copy-all-label">📋 Copy All Text</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="editorial-card" style="background: #fff; padding: 24px;">
+                    <pre id="full-text-content"
+                        style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; margin: 0; background: var(--bg-warm); padding: 20px; border-radius: var(--radius-sm); border: 1px solid rgba(0,0,0,0.04);">{{ full_text }}</pre>
+                </div>
+            </main>
+
+            <footer
+                style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btnCopy = document.getElementById("btn-copy-all-text");
+            const btnLabel = document.getElementById("btn-copy-all-label");
+            const textContent = document.getElementById("full-text-content");
+
+            if (btnCopy && textContent) {
+                btnCopy.addEventListener("click", async () => {
+                    try {
+                        await navigator.clipboard.writeText(textContent.textContent);
+                        btnLabel.textContent = "Copied!";
+                        setTimeout(() => {
+                            btnLabel.textContent = "📋 Copy All Text";
+                        }, 2000);
+                    } catch (e) {
+                        console.error("Clipboard copy failed:", e);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

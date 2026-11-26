@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress & Performance Analytics - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .analytics-score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #fff;
+            border: 5px solid var(--forest-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .pillar-bar-item {
+            margin-bottom: 14px;
+        }
+        .pillar-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .pillar-track {
+            background: rgba(0,0,0,0.06);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .pillar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+        .weekly-bar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        .bar-track {
+            width: 32px;
+            height: 140px;
+            background: rgba(0,0,0,0.04);
+            border: 1px solid var(--border-warm);
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-end;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        .bar-fill-sage {
+            width: 100%;
+            background: linear-gradient(180deg, var(--sage-green) 0%, var(--forest-green) 100%);
+            border-radius: 4px;
+            transition: height 0.3s ease;
+        }
+        .diff-card-editorial {
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search analytics, activity, or metrics...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.activity_history_view') }}" class="topbar-icon-btn" title="Activity History">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="12 8 12 12 14 14"/>
+                            <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Page Title -->
+                <div class="editorial-page-header">
+                    <div class="editorial-tagline">Academic Progress & Metrics</div>
+                    <h1 class="editorial-title">Performance Analytics</h1>
+                    <p class="editorial-subtitle">Examine your study consistency, quiz score trajectories over time, and comprehensive learning indices grounded in real database activity.</p>
+                </div>
+
+                <!-- SECTION C: OVERALL LEARNING PROGRESS CARD -->
+                <div class="editorial-card" style="margin-bottom: 28px; position: relative;">
+                    <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+
+                    <div style="display: flex; gap: 32px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                            <div class="analytics-score-circle">
+                                <span style="font-family: var(--font-heading); font-size: 2.4rem; font-weight: 800; color: var(--forest-green);">
+                                    {{ analytics.overall_progress }}%
+                                </span>
+                                <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); font-weight: 700;">
+                                    Overall Progress
+                                </span>
+                            </div>
+                            <span style="background: rgba(130, 150, 107, 0.25); color: var(--forest-green); font-size: 0.8rem; font-weight: 700; padding: 3px 12px; border-radius: 12px;">
+                                Active Learning State
+                            </span>
+                        </div>
+
+                        <div style="flex: 1; min-width: 280px;">
+                            <div class="editorial-tagline" style="margin-bottom: 2px;">Overall Learning Progress</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.55rem; color: var(--text-primary); margin: 0 0 8px 0;">
+                                Overall Learning Progress Formulation
+                            </h2>
+                            <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 18px 0;">
+                                {{ analytics.progress_explanation }}
+                            </p>
+
+                            <!-- 5 Pillars -->
+                            <div class="pillar-bar-item">
+                                <div class="pillar-header">
+                                    <span>Document Uploads (Goal: 5 PDFs)</span>
+                                    <span style="font-family: monospace;">{{ analytics.progress_breakdown.documents_score }} / 20 pts</span>
+                                </div>
+                                <div class="pillar-track">
+                                    <div class="pillar-fill" style="width: {{ (analytics.progress_breakdown.documents_score / 20 * 100)|round }}%; background: var(--dusty-blue);"></div>
+                                </div>
+                            </div>
+
+                            <div class="pillar-bar-item">
+                                <div class="pillar-header">
+                                    <span>AI Summaries (Goal: 5 Summaries)</span>
+                                    <span style="font-family: monospace;">{{ analytics.progress_breakdown.summaries_score }} / 20 pts</span>
+                                </div>
+                                <div class="pillar-track">
+                                    <div class="pillar-fill" style="width: {{ (analytics.progress_breakdown.summaries_score / 20 * 100)|round }}%; background: var(--lavender-muted);"></div>
+                                </div>
+                            </div>
+
+                            <div class="pillar-bar-item">
+                                <div class="pillar-header">
+                                    <span>Chatbot Inquiries (Goal: 10 Questions)</span>
+                                    <span style="font-family: monospace;">{{ analytics.progress_breakdown.chat_score }} / 20 pts</span>
+                                </div>
+                                <div class="pillar-track">
+                                    <div class="pillar-fill" style="width: {{ (analytics.progress_breakdown.chat_score / 20 * 100)|round }}%; background: var(--terracotta);"></div>
+                                </div>
+                            </div>
+
+                            <div class="pillar-bar-item">
+                                <div class="pillar-header">
+                                    <span>Quizzes Attempted (Goal: 5 Quizzes)</span>
+                                    <span style="font-family: monospace;">{{ analytics.progress_breakdown.quizzes_score }} / 20 pts</span>
+                                </div>
+                                <div class="pillar-track">
+                                    <div class="pillar-fill" style="width: {{ (analytics.progress_breakdown.quizzes_score / 20 * 100)|round }}%; background: var(--sage-green);"></div>
+                                </div>
+                            </div>
+
+                            <div class="pillar-bar-item" style="margin-bottom: 0;">
+                                <div class="pillar-header">
+                                    <span>Quiz Mastery (Average Score Performance)</span>
+                                    <span style="font-family: monospace;">{{ analytics.progress_breakdown.mastery_score }} / 20 pts</span>
+                                </div>
+                                <div class="pillar-track">
+                                    <div class="pillar-fill" style="width: {{ (analytics.progress_breakdown.mastery_score / 20 * 100)|round }}%; background: var(--yellow-warm);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION A: WEEKLY STUDY ACTIVITY BAR CHART -->
+                <section class="editorial-card" style="margin-bottom: 28px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                        <div>
+                            <div class="editorial-tagline">Study Rhythm</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Weekly Study Activity
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">Daily activity distribution for the current ISO calendar week (Monday to Sunday)</p>
+                        </div>
+                        <span style="background: var(--bg-warm); font-weight: 700; font-size: 0.8rem; color: var(--forest-green); padding: 4px 12px; border-radius: 12px; border: 1px solid var(--border-warm);">
+                            {{ analytics.weekly_activity.total_this_week }} Total Events This Week
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; height: 180px; padding: 10px 20px;">
+                        {% for i in range(7) %}
+                            {% set count = analytics.weekly_activity.counts[i]|default(0) %}
+                            {% set label = analytics.weekly_activity.labels[i]|default('') %}
+                            {% set date_str = analytics.weekly_activity.dates[i]|default('') %}
+                            <div class="weekly-bar-col">
+                                <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">{{ count }}</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill-sage" style="height: {{ (count / 20 * 100)|round if count > 0 else 6 }}%;"></div>
+                                </div>
+                                <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary); margin-top: 4px;">{{ label }}</span>
+                                <span style="font-family: monospace; font-size: 0.7rem; color: var(--text-secondary);">{{ date_str[5:10] }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- SECTION B: QUIZ PERFORMANCE LINE / TIMELINE CHART -->
+                <section class="editorial-card" style="margin-bottom: 28px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                        <div>
+                            <div class="editorial-tagline">Score Progression</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Quiz Performance Over Time
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">Chronological score trajectory across all completed quizzes</p>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-secondary);">
+                            <strong>{{ analytics.learning_stats.total_quizzes_completed }}</strong> Quizzes Recorded
+                        </span>
+                    </div>
+
+                    {% if analytics.quiz_performance_history %}
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding: 10px 0;">
+                            {% for item in analytics.quiz_performance_history %}
+                                <div style="display: flex; flex-direction: column; align-items: center; min-width: 140px; text-align: center;">
+                                    <div style="width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: 800; font-size: 0.95rem; {% if item.passed %}background: rgba(130, 150, 107, 0.25); color: var(--forest-green); border: 2px solid var(--forest-green);{% else %}background: rgba(201, 111, 72, 0.2); color: var(--terracotta); border: 2px solid var(--terracotta);{% endif %}">
+                                        {{ item.percentage }}%
+                                    </div>
+                                    <div style="width: 2px; height: 16px; background: var(--border-warm); margin: 6px 0;"></div>
+                                    <div style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;" title="{{ item.quiz_title }}">
+                                        {{ item.quiz_title }}
+                                    </div>
+                                    <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: capitalize;">
+                                        {{ item.difficulty }} &bull; {{ item.date }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 32px 16px;">
+                            <div style="font-size: 2.2rem; margin-bottom: 8px;">📈</div>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); margin: 0 0 6px 0;">No Quiz Performance Records Yet</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 16px 0;">Complete your first multiple-choice quiz to visualize your score trend over time.</p>
+                            <a href="{{ url_for('main.quizzes_hub') }}" class="btn-terracotta-pill" style="text-decoration: none; font-size: 0.85rem;">Take a Quiz</a>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <!-- SECTION D: QUIZ DIFFICULTY ANALYSIS -->
+                <section class="editorial-card" style="margin-bottom: 28px;">
+                    <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                        <div class="editorial-tagline">Difficulty Tiers</div>
+                        <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Quiz Difficulty Analysis
+                        </h2>
+                        <p class="editorial-subtitle" style="margin: 0;">Performance breakdown across Easy, Medium, and Hard multiple-choice assessments</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+                        <!-- Easy -->
+                        <div class="diff-card-editorial" style="border-top: 4px solid var(--sage-green);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: 700; font-size: 0.85rem; color: var(--forest-green);">🌱 Easy Tier</span>
+                                <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ analytics.difficulty_breakdown.easy.attempts }} Attempts</span>
+                            </div>
+                            <div style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2px;">
+                                {{ analytics.difficulty_breakdown.easy.average_percentage }}%
+                            </div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 14px;">Average Score</div>
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-warm); padding-top: 10px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Passed (≥ 60%):</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.easy.passed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Needs Review (&lt; 60%):</span>
+                                    <strong style="color: var(--terracotta);">{{ analytics.difficulty_breakdown.easy.failed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Pass Rate:</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.easy.pass_rate }}%</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Medium -->
+                        <div class="diff-card-editorial" style="border-top: 4px solid var(--yellow-warm);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: 700; font-size: 0.85rem; color: #9A6E24;">⚖️ Medium Tier</span>
+                                <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ analytics.difficulty_breakdown.medium.attempts }} Attempts</span>
+                            </div>
+                            <div style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2px;">
+                                {{ analytics.difficulty_breakdown.medium.average_percentage }}%
+                            </div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 14px;">Average Score</div>
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-warm); padding-top: 10px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Passed (≥ 60%):</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.medium.passed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Needs Review (&lt; 60%):</span>
+                                    <strong style="color: var(--terracotta);">{{ analytics.difficulty_breakdown.medium.failed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Pass Rate:</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.medium.pass_rate }}%</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hard -->
+                        <div class="diff-card-editorial" style="border-top: 4px solid var(--terracotta);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: 700; font-size: 0.85rem; color: var(--terracotta);">🔥 Hard Tier</span>
+                                <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ analytics.difficulty_breakdown.hard.attempts }} Attempts</span>
+                            </div>
+                            <div style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2px;">
+                                {{ analytics.difficulty_breakdown.hard.average_percentage }}%
+                            </div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 14px;">Average Score</div>
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-warm); padding-top: 10px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Passed (≥ 60%):</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.hard.passed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Needs Review (&lt; 60%):</span>
+                                    <strong style="color: var(--terracotta);">{{ analytics.difficulty_breakdown.hard.failed }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Pass Rate:</span>
+                                    <strong style="color: var(--forest-green);">{{ analytics.difficulty_breakdown.hard.pass_rate }}%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION E: LEARNING STATISTICS GRID -->
+                <section class="editorial-card" style="margin-bottom: 40px;">
+                    <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                        <div class="editorial-tagline">Cumulative Platform Metrics</div>
+                        <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Comprehensive Learning Statistics
+                        </h2>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace;">{{ analytics.learning_stats.total_activities }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Total Activities</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace;">{{ analytics.learning_stats.total_quizzes_completed }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Quizzes Taken</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: var(--forest-green);">{{ analytics.learning_stats.average_score }}%</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Average Score</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: var(--forest-green);">{{ analytics.learning_stats.highest_score }}%</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Highest Score</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: var(--terracotta);">{{ analytics.learning_stats.lowest_score }}%</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Lowest Score</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: var(--forest-green);">{{ analytics.learning_stats.total_correct_answers }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Total Correct</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: var(--terracotta);">{{ analytics.learning_stats.total_incorrect_answers }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Total Incorrect</div>
+                        </div>
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; color: #9A6E24;">{{ analytics.learning_stats.total_unanswered }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Unanswered</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

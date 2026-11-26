@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.original_filename }} - AI Study Chatbot (RAG) | SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .chat-main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 992px) {
+            .chat-main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .chat-window-card {
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            min-height: 580px;
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            background: linear-gradient(180deg, #FAF6EE 0%, #FFFDF9 100%);
+        }
+        .chat-message-row {
+            display: flex;
+            gap: 12px;
+            max-width: 82%;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .chat-message-row.user-row {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .chat-message-row.assistant-row {
+            align-self: flex-start;
+        }
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+        .chat-avatar.assistant-avatar {
+            background: var(--forest-green);
+            color: #fff;
+        }
+        .chat-avatar.user-avatar {
+            background: var(--terracotta);
+            color: #fff;
+        }
+        .chat-bubble {
+            padding: 14px 18px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            line-height: 1.65;
+            font-size: 0.93rem;
+            position: relative;
+        }
+        .chat-bubble.assistant-bubble {
+            background: #fff;
+            border: 1px solid var(--border-warm);
+            color: var(--text-primary);
+            border-top-left-radius: 4px;
+        }
+        .chat-bubble.user-bubble {
+            background: var(--cream-soft);
+            border: 1.5px solid var(--terracotta);
+            color: var(--text-primary);
+            border-top-right-radius: 4px;
+        }
+        .bubble-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+        }
+        .sender-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .bubble-timestamp {
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            margin-left: auto;
+        }
+        .sources-accordion {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-warm);
+        }
+        .sources-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--forest-green);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .source-card {
+            background: var(--bg-warm);
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-top: 6px;
+            font-size: 0.82rem;
+        }
+        .source-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .source-page-badge {
+            background: var(--forest-green);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .source-score {
+            margin-left: auto;
+            color: var(--terracotta);
+            font-weight: 700;
+            font-size: 0.72rem;
+        }
+        .source-card-excerpt {
+            color: var(--text-secondary);
+            font-style: italic;
+            line-height: 1.45;
+        }
+        .chat-input-bar {
+            padding: 16px 20px;
+            background: #fff;
+            border-top: 1.5px solid var(--border-warm);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .chat-input-field {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1.5px solid var(--border-warm);
+            border-radius: 24px;
+            background: var(--bg-warm);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .chat-input-field:focus {
+            background: #fff;
+            border-color: var(--terracotta);
+            box-shadow: 0 0 0 3px rgba(201, 111, 72, 0.15);
+        }
+        .suggested-chips-bar {
+            padding: 10px 20px;
+            background: var(--bg-warm);
+            border-top: 1px solid var(--border-warm);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .suggested-chip {
+            background: #fff;
+            border: 1px solid var(--border-warm);
+            color: var(--forest-green);
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .suggested-chip:hover {
+            border-color: var(--terracotta);
+            color: var(--terracotta);
+            transform: translateY(-1px);
+        }
+        .typing-indicator-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search notes, questions, or topics...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.document_details', doc_id=document.id) }}" class="topbar-icon-btn" title="Document Details">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Breadcrumbs & Document Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">
+                            <a href="{{ url_for('main.documents_list') }}" style="color: var(--terracotta); text-decoration: none;">Documents</a> /
+                            <a href="{{ url_for('main.document_details', doc_id=document.id) }}" style="color: var(--text-primary); text-decoration: none;">{{ document.original_filename }}</a> /
+                            <span style="font-weight: 600;">AI Study Chatbot</span>
+                        </div>
+                        <h1 style="font-family: var(--font-heading); font-size: 1.8rem; color: var(--text-primary); margin: 0;">
+                            AI Study Chatbot (RAG)
+                        </h1>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" class="btn-card-action" id="btn-reindex" style="background: #fff; padding: 8px 14px; border-radius: 20px; font-weight: 600;" title="Recompute FAISS vector index">
+                            🔄 <span>Re-Index</span>
+                        </button>
+                        <button type="button" class="btn-card-action" id="btn-clear-chat" style="background: #fff; padding: 8px 14px; border-radius: 20px; font-weight: 600;" title="Clear conversation history">
+                            🗑️ <span>Clear Chat</span>
+                        </button>
+                        <a href="{{ url_for('main.document_details', doc_id=document.id) }}" class="btn-card-action" style="background: #fff; padding: 8px 14px; border-radius: 20px; font-weight: 600; text-decoration: none;" title="View Document Summary">
+                            📝 <span>Summary</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Alert container -->
+                <div id="chat-alert-container" class="hidden" style="margin-bottom: 16px;"></div>
+
+                <div class="chat-main-grid">
+                    <!-- Left Sidebar / Study Reference Drawer -->
+                    <div class="editorial-card" style="padding: 20px;">
+                        <div class="sticky-pushpin" style="top: -10px; right: 20px;"></div>
+                        <div class="editorial-tagline">Study Material</div>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 4px 0 12px 0;">
+                            {{ document.original_filename }}
+                        </h3>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--border-warm);">
+                                <span>Pages Indexed:</span>
+                                <strong style="color: var(--text-primary);">{{ document.total_pages }}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--border-warm);">
+                                <span>Total Words:</span>
+                                <strong style="color: var(--text-primary);">{{ "{:,}".format(document.total_words) }}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--border-warm);">
+                                <span>Vector Chunks:</span>
+                                <strong style="color: var(--text-primary);" id="doc-chunks-count">{{ total_chunks }}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--border-warm);">
+                                <span>Retrieval:</span>
+                                <span style="background: rgba(130, 150, 107, 0.2); color: var(--forest-green); padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.75rem;" id="index-status-badge">FAISS + MiniLM</span>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 14px; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary);">
+                            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🌿 Grounded RAG</div>
+                            All answers are synthesized from indexed chunks with exact page citations and similarity rankings.
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <a href="{{ url_for('main.new_quiz_config', doc_id=document.id) }}" class="btn-terracotta-pill" style="width: 100%; text-align: center; text-decoration: none; display: block; box-sizing: border-box; font-size: 0.88rem;">
+                                🎯 Test Knowledge with Quiz
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Main Chat Conversation Window -->
+                    <div class="chat-window-card glass-card" id="chat-window-card" data-doc-id="{{ document.id }}" data-conv-id="{{ conversation.id }}">
+                        <!-- Messages Container -->
+                        <div class="chat-messages-container" id="chat-messages-container">
+                            <!-- Welcome System Message -->
+                            <div class="chat-message-row assistant-row">
+                                <div class="chat-avatar assistant-avatar">🌿</div>
+                                <div class="chat-bubble assistant-bubble">
+                                    <div class="bubble-header">
+                                        <span class="sender-name">Study Assistant AI</span>
+                                        <span style="background: rgba(130, 150, 107, 0.2); color: var(--forest-green); font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">RAG Grounded</span>
+                                    </div>
+                                    <div class="bubble-body">
+                                        <p style="margin: 0 0 6px 0;">
+                                            Hello! I am your AI Study Assistant for <strong>{{ document.original_filename }}</strong>.
+                                            I answer questions based on the factual text extracted from this document using semantic vector retrieval (FAISS) and instruction-tuned generation.
+                                        </p>
+                                        <p style="margin: 0; font-size: 0.88rem; color: var(--text-secondary);">
+                                            Every response includes exact page citations. Ask a question or click a suggested prompt below!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- History Messages -->
+                            {% if chat_history %}
+                                {% for msg in chat_history %}
+                                    {% if msg.role == 'user' %}
+                                        <div class="chat-message-row user-row">
+                                            <div class="chat-avatar user-avatar">K</div>
+                                            <div class="chat-bubble user-bubble">
+                                                <div class="bubble-header">
+                                                    <span class="sender-name">You</span>
+                                                    <span class="bubble-timestamp font-mono">{{ msg.created_at[11:16] if msg.created_at else '' }}</span>
+                                                </div>
+                                                <div class="bubble-body">
+                                                    <p style="margin: 0;">{{ msg.content }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="chat-message-row assistant-row">
+                                            <div class="chat-avatar assistant-avatar">🌿</div>
+                                            <div class="chat-bubble assistant-bubble">
+                                                <div class="bubble-header">
+                                                    <span class="sender-name">Study Assistant AI</span>
+                                                    <span style="background: rgba(130, 150, 107, 0.2); color: var(--forest-green); font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Grounded</span>
+                                                    <span class="bubble-timestamp font-mono">{{ msg.created_at[11:16] if msg.created_at else '' }}</span>
+                                                </div>
+                                                <div class="bubble-body">
+                                                    <p style="margin: 0;">{{ msg.content }}</p>
+                                                    {% if msg.sources %}
+                                                        <div class="sources-accordion">
+                                                            <div class="sources-title">Verified Citations ({{ msg.sources|length }})</div>
+                                                            <div class="sources-cards-list">
+                                                                {% for src in msg.sources %}
+                                                                    <div class="source-card">
+                                                                        <div class="source-card-header">
+                                                                            <span class="source-page-badge font-mono">Page {{ src.page_number }}</span>
+                                                                            <span style="font-weight: 600; color: var(--text-primary);">{{ src.original_filename }}</span>
+                                                                            {% if src.similarity_score %}
+                                                                                <span class="source-score font-mono">{{ (src.similarity_score * 100)|round(1) }}% match</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                        <div class="source-card-excerpt">&ldquo;{{ src.excerpt }}&rdquo;</div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+
+                            <!-- Typing Indicator Row -->
+                            <div class="typing-indicator-row hidden" id="chat-typing-row">
+                                <span>🌿 AI is reading relevant document excerpts...</span>
+                                <span id="typing-status-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Suggested Question Chips Bar -->
+                        <div class="suggested-chips-bar" id="suggested-chips-container">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">Suggestions:</span>
+                            <span class="suggested-chip">What is the central concept discussed in this text?</span>
+                            <span class="suggested-chip">Explain the key definitions and formulas</span>
+                            <span class="suggested-chip">Summarize the main conclusions</span>
+                        </div>
+
+                        <!-- Chat Input Bar -->
+                        <form class="chat-input-bar chat-form" id="chat-form" onsubmit="event.preventDefault(); return false;">
+                            <input type="text" id="chat-question-input" class="chat-input-field" placeholder="Ask any question about this study material..." autocomplete="off">
+                            <button type="button" class="btn-terracotta-pill" id="btn-chat-send" style="padding: 12px 22px; cursor: pointer;">
+                                Send 💬
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

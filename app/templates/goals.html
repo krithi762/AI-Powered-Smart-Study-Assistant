@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Goals - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .goal-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            align-items: flex-end;
+        }
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .goal-card-editorial {
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            padding: 22px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .goal-card-completed {
+            background: rgba(255, 255, 255, 0.7);
+            border-style: dashed;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search goals or deadlines...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.analytics_view') }}" class="topbar-icon-btn" title="Performance Analytics">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Header -->
+                <div class="editorial-page-header">
+                    <div class="editorial-tagline">Target Milestones & Deadlines</div>
+                    <h1 class="editorial-title">Study Goals</h1>
+                    <p class="editorial-subtitle">Set targeted milestones, designate deadlines, and watch your progress advance automatically as you upload notes, read summaries, and take quizzes.</p>
+                </div>
+
+                <!-- Create New Goal Card -->
+                <div class="editorial-card" style="margin-bottom: 30px; position: relative;">
+                    <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+
+                    <div style="margin-bottom: 18px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                        <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Create a Study Goal
+                        </h2>
+                        <p class="editorial-subtitle" style="margin: 0;">Choose a goal category and designate your target quantity and completion date</p>
+                    </div>
+
+                    <form id="create-goal-form" class="goal-form-grid" onsubmit="handleCreateGoal(event)">
+                        <div style="grid-column: span 2;">
+                            <label for="goal-title-input" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Goal Title</label>
+                            <input type="text" id="goal-title-input" name="title" style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-warm); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 0.9rem; box-sizing: border-box;" placeholder="e.g. Master Operating Systems Memory Management" required>
+                        </div>
+
+                        <div>
+                            <label for="goal-type-select" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Category</label>
+                            <select id="goal-type-select" name="goal_type" style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-warm); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fff;" onchange="updateGoalUnit(this.value)" required>
+                                <option value="upload_documents">Upload Study PDFs</option>
+                                <option value="generate_summaries">Generate AI Summaries</option>
+                                <option value="complete_quizzes">Complete Quizzes</option>
+                                <option value="quiz_score">Average Quiz Score (%)</option>
+                                <option value="study_days">Active Study Days</option>
+                                <option value="chat_questions">Ask Chatbot Questions</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="goal-target-input" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Target Value (<span id="target-unit-label">Count</span>)</label>
+                            <input type="number" id="goal-target-input" name="target_value" style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-warm); border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; box-sizing: border-box;" min="1" max="100" value="5" required>
+                        </div>
+
+                        <div>
+                            <label for="goal-date-input" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Target Date (Optional)</label>
+                            <input type="date" id="goal-date-input" name="target_date" style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-warm); border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; box-sizing: border-box;">
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn-terracotta-pill" id="btn-create-goal" style="width: 100%; padding: 11px 20px; font-size: 0.9rem; cursor: pointer;">
+                                + Save Goal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Active Goals -->
+                <section style="margin-bottom: 36px;">
+                    <div style="margin-bottom: 18px; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Active Goals ({{ in_progress_goals|length }})
+                        </h2>
+                        <p class="editorial-subtitle" style="margin: 0;">Dynamically updated based on real database activity</p>
+                    </div>
+
+                    {% if in_progress_goals %}
+                        <div class="goals-grid">
+                            {% for g in in_progress_goals %}
+                                <div class="goal-card-editorial" id="goal-card-{{ g.id }}">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                            <span style="background: var(--bg-warm); font-size: 0.75rem; font-weight: 700; color: var(--forest-green); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border-warm);">
+                                                {{ g.goal_type|replace('_', ' ')|capitalize }}
+                                            </span>
+                                            {% if g.days_remaining is not none %}
+                                                <span style="font-family: monospace; font-size: 0.75rem; color: var(--terracotta); font-weight: 700;">
+                                                    {% if g.days_remaining > 0 %}{{ g.days_remaining }} days left{% elif g.days_remaining == 0 %}Due today{% else %}Overdue{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); margin: 0 0 14px 0; line-height: 1.35;">
+                                            {{ g.title }}
+                                        </h3>
+
+                                        <div style="margin-bottom: 16px;">
+                                            <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                                                <div style="background: var(--terracotta); height: 100%; width: {{ g.progress_percentage }}%; transition: width 0.3s ease;"></div>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-family: monospace; color: var(--text-secondary);">
+                                                <span>{{ g.current_value|round(1) }} / {{ g.target_value|round(1) }}</span>
+                                                <strong style="color: var(--forest-green);">{{ g.progress_percentage }}%</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border-warm); padding-top: 12px;">
+                                        <button type="button" class="btn-card-action" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 14px; font-weight: 600;" onclick="markGoalCompleted({{ g.id }})">
+                                            ✓ Complete
+                                        </button>
+                                        <button type="button" style="background: transparent; border: 1px solid rgba(217, 83, 79, 0.4); color: #c9443b; padding: 5px 12px; border-radius: 14px; font-size: 0.78rem; cursor: pointer;" onclick="deleteGoal({{ g.id }})">
+                                            ✕ Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="editorial-card" style="text-align: center; padding: 36px 20px;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">🎯</div>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); margin: 0 0 4px 0;">No Active Study Goals</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Create your first study goal above to stay on track with your study routine.</p>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <!-- Completed Goals -->
+                <section style="margin-bottom: 40px;">
+                    <div style="margin-bottom: 18px; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Completed Goals ({{ completed_goals|length }})
+                        </h2>
+                        <p class="editorial-subtitle" style="margin: 0;">Verified milestones achieved through your dedicated study sessions</p>
+                    </div>
+
+                    {% if completed_goals %}
+                        <div class="goals-grid">
+                            {% for g in completed_goals %}
+                                <div class="goal-card-editorial goal-card-completed" id="goal-card-{{ g.id }}">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                            <span style="background: rgba(130, 150, 107, 0.25); color: var(--forest-green); font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px;">
+                                                ✓ COMPLETED
+                                            </span>
+                                            <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-secondary);">
+                                                {{ g.completed_at[0:10] if g.completed_at else 'Verified' }}
+                                            </span>
+                                        </div>
+
+                                        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-secondary); text-decoration: line-through; margin: 0 0 14px 0;">
+                                            {{ g.title }}
+                                        </h3>
+
+                                        <div style="margin-bottom: 16px;">
+                                            <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                                                <div style="background: var(--forest-green); height: 100%; width: 100%;"></div>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-family: monospace; color: var(--text-secondary);">
+                                                <span>{{ g.current_value|round(1) }} / {{ g.target_value|round(1) }}</span>
+                                                <strong style="color: var(--forest-green);">100%</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-warm); padding-top: 12px;">
+                                        <button type="button" style="background: transparent; border: 1px solid var(--border-warm); color: var(--text-secondary); padding: 5px 12px; border-radius: 14px; font-size: 0.78rem; cursor: pointer;" onclick="deleteGoal({{ g.id }})">
+                                            ✕ Remove Record
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="editorial-card" style="text-align: center; padding: 36px 20px;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">🏆</div>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); margin: 0 0 4px 0;">No Goals Completed Yet</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">As you reach your study targets, your accomplishments will be archived here.</p>
+                        </div>
+                    {% endif %}
+                </section>
+            </main>
+
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        function updateGoalUnit(val) {
+            const unitLabel = document.getElementById('target-unit-label');
+            const targetInput = document.getElementById('goal-target-input');
+            if (val === 'quiz_score') {
+                unitLabel.textContent = '% score';
+                targetInput.value = '80';
+                targetInput.max = '100';
+            } else if (val === 'study_days') {
+                unitLabel.textContent = 'Days';
+                targetInput.value = '7';
+                targetInput.max = '365';
+            } else {
+                unitLabel.textContent = 'Count';
+                targetInput.value = '5';
+                targetInput.max = '100';
+            }
+        }
+
+        async function handleCreateGoal(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = {
+                title: form.title.value.trim(),
+                goal_type: form.goal_type.value,
+                target_value: parseFloat(form.target_value.value),
+                target_date: form.target_date.value || null
+            };
+
+            const res = await fetch('/api/goals/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const json = await res.json();
+            if (json.success) {
+                window.location.reload();
+            } else {
+                alert(json.error || 'Failed to create goal.');
+            }
+        }
+
+        async function markGoalCompleted(goalId) {
+            const res = await fetch(`/api/goals/${goalId}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'completed' })
+            });
+            const json = await res.json();
+            if (json.success) {
+                window.location.reload();
+            }
+        }
+
+        async function deleteGoal(goalId) {
+            if (!confirm('Are you sure you want to delete this goal?')) return;
+            const res = await fetch(`/api/goals/${goalId}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const json = await res.json();
+            if (json.success) {
+                const el = document.getElementById(`goal-card-${goalId}`);
+                if (el) el.remove();
+                window.location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

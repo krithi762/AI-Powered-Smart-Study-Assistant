@@ -1,0 +1,11 @@
+[
+  {
+    "document_id": 999,
+    "original_filename": "thermo.pdf",
+    "page_number": 1,
+    "chunk_index": 0,
+    "chunk_id": "doc_999_p1_c0",
+    "chunk_text": "The Carnot heat engine is an idealized thermodynamic cycle operating between two temperatures to achieve maximum efficiency.",
+    "word_count": 17
+  }
+]

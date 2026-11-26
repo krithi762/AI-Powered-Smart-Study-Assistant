@@ -1,0 +1,68 @@
+# ==============================================================================
+# AI-Powered Smart Study Assistant - Git Ignore Rules
+# ==============================================================================
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# File Uploads & User Study Materials (PDFs)
+uploads/*
+!uploads/.gitkeep
+*.pdf
+
+# Model Weights & Cached Model Downloads
+models/*
+!models/.gitkeep
+*.bin
+*.pt
+*.pth
+*.onnx
+hf_cache/
+
+# SQLite Databases & Storage
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+!database/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/

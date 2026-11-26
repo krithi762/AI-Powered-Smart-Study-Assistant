@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy.ai - My Student Profile | Academic Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- ====================================================================
+             LEFT SIDEBAR - DEEP FOREST GREEN (SHARED EXACT STUDY DESK LAYOUT)
+             ==================================================================== -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- ====================================================================
+             MAIN CONTENT VIEW (OFFSET BY SIDEBAR WIDTH, RESPONSIVE)
+             ==================================================================== -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="app-topbar">
+                <button class="mobile-sidebar-toggle" id="mobileMenuBtn" aria-label="Toggle Navigation">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+
+                <!-- Search Input Form -->
+                <div class="topbar-search-form">
+                    <div class="search-input-wrap">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search profile settings, preferences...">
+                    </div>
+                </div>
+
+                <!-- Right Topbar Profile & Controls -->
+                <div class="topbar-actions">
+                    <a href="{{ url_for('main.activity_history_view') }}" class="topbar-btn" title="Study History & Calendar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </a>
+
+                    <!-- Profile Pill Linked to Settings -->
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-pill" title="My Student Profile">
+                        <div class="user-avatar-circle" id="topbarAvatar">{{ profile.initials|default('K') }}</div>
+                        <span class="user-name-text" id="topbarName">{{ profile.full_name|default('Krishna K') }}</span>
+                        <svg class="user-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </a>
+                </div>
+            </header>
+
+            <!-- ================================================================
+                 STUDY PROFILE MAIN WORKSPACE
+                 ================================================================ -->
+            <main class="page-container academic-dotted-canvas">
+                <div class="profile-page-wrapper">
+
+                    <!-- Notification / Alert Banner -->
+                    <div class="profile-alert-banner" id="profileAlertBanner" role="alert">
+                        <span id="profileAlertMessage"></span>
+                        <button type="button" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit; padding-left: 12px;" onclick="document.getElementById('profileAlertBanner').style.display='none'">&times;</button>
+                    </div>
+
+                    <!-- 2. PROFILE PAGE HEADER (WELCOME SECTION) -->
+                    <section class="profile-hero-banner">
+                        <!-- Decorative Backdrop Elements -->
+                        <div class="profile-hero-backdrop">
+                            <svg width="240" height="140" viewBox="0 0 240 140" fill="none">
+                                <circle cx="190" cy="50" r="70" fill="rgba(201, 111, 72, 0.06)"/>
+                                <path d="M140 140C165 90 200 40 240 10" stroke="#82966B" stroke-width="2" stroke-dasharray="4 4" opacity="0.4"/>
+                                <rect x="30" y="20" width="80" height="100" rx="4" stroke="#D5C7B2" stroke-width="1.5" fill="rgba(255, 249, 240, 0.5)"/>
+                                <line x1="70" y1="20" x2="70" y2="120" stroke="#D5C7B2" stroke-width="1"/>
+                            </svg>
+                        </div>
+
+                        <div class="profile-hero-content">
+                            <div class="profile-hero-greeting" id="heroGreeting">
+                                <span>Welcome back, {{ profile.first_name|default('Krishna') }}!</span>
+                                <span>🌿</span>
+                            </div>
+                            <h1 class="profile-hero-title">My Student Profile</h1>
+                            <p class="profile-hero-desc">
+                                Manage your personal information, academic details and study preferences in one place.
+                            </p>
+                            <div class="profile-hero-tags">
+                                <span class="profile-hero-tag">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                                    <span id="heroDepartmentTag">{{ profile.department|default('Computer Science & Engineering') }}</span>
+                                </span>
+                                <span class="profile-hero-tag">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <span id="heroYearTag">{{ profile.academic_year|default('Year 3 (Junior)') }}</span>
+                                </span>
+                                <span class="profile-hero-tag">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                                    <span id="heroSemesterTag">{{ profile.current_semester|default('Semester 6') }}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Profile Avatar with Initials -->
+                        <div class="profile-hero-avatar-wrap">
+                            <div class="profile-avatar-circle-large" id="heroAvatarCircle">
+                                {{ profile.initials|default('KK') }}
+                                <div class="profile-avatar-status-pip" title="Active Student Profile"></div>
+                            </div>
+                            <span class="profile-avatar-caption">Student Identity</span>
+                        </div>
+                    </section>
+
+                    <!-- 3. PROFILE OVERVIEW CARDS (4 DASHBOARD-STYLE CARDS) -->
+                    <div class="profile-overview-grid">
+                        <!-- Card 1: Personal Information -->
+                        <div class="profile-overview-card">
+                            <div class="profile-overview-top">
+                                <div class="profile-overview-icon-box">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <span class="profile-overview-badge">Student</span>
+                            </div>
+                            <div class="profile-overview-label">Personal Information</div>
+                            <div class="profile-overview-value" id="cardFullName" title="{{ profile.full_name }}">{{ profile.full_name }}</div>
+                            <div class="profile-overview-subtext" id="cardEmail" title="{{ profile.email }}">{{ profile.email }}</div>
+                        </div>
+
+                        <!-- Card 2: Academic Information -->
+                        <div class="profile-overview-card">
+                            <div class="profile-overview-top">
+                                <div class="profile-overview-icon-box terracotta">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                                    </svg>
+                                </div>
+                                <span class="profile-overview-badge">Specialization</span>
+                            </div>
+                            <div class="profile-overview-label">Academic Information</div>
+                            <div class="profile-overview-value" id="cardSpecialization" title="{{ profile.specialization }}">{{ profile.specialization }}</div>
+                            <div class="profile-overview-subtext" id="cardCollege" title="{{ profile.college_name }}">{{ profile.college_name }}</div>
+                        </div>
+
+                        <!-- Card 3: Department -->
+                        <div class="profile-overview-card">
+                            <div class="profile-overview-top">
+                                <div class="profile-overview-icon-box blue">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                                        <rect x="9" y="9" width="6" height="6"/>
+                                        <line x1="9" y1="1" x2="9" y2="4"/>
+                                        <line x1="15" y1="1" x2="15" y2="4"/>
+                                        <line x1="9" y1="20" x2="9" y2="23"/>
+                                        <line x1="15" y1="20" x2="15" y2="23"/>
+                                    </svg>
+                                </div>
+                                <span class="profile-overview-badge">Department</span>
+                            </div>
+                            <div class="profile-overview-label">Department</div>
+                            <div class="profile-overview-value" id="cardDepartment" title="{{ profile.department }}">{{ profile.department }}</div>
+                            <div class="profile-overview-subtext">Major Academic Faculty</div>
+                        </div>
+
+                        <!-- Card 4: Academic Year -->
+                        <div class="profile-overview-card">
+                            <div class="profile-overview-top">
+                                <div class="profile-overview-icon-box gold">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </div>
+                                <span class="profile-overview-badge">Standing</span>
+                            </div>
+                            <div class="profile-overview-label">Academic Year</div>
+                            <div class="profile-overview-value" id="cardYear" title="{{ profile.academic_year }}">{{ profile.academic_year }}</div>
+                            <div class="profile-overview-subtext" id="cardSemester">{{ profile.current_semester }}</div>
+                        </div>
+                    </div>
+
+                    <!-- PROFILE EDIT FORM WRAPPER -->
+                    <form id="studentProfileForm" method="POST" action="{{ url_for('main.settings_view') }}" novalidate>
+
+                        <!-- 4. PERSONAL INFORMATION SECTION -->
+                        <div class="profile-section-card">
+                            <div class="profile-card-header">
+                                <div class="profile-card-title-group">
+                                    <h2>Personal Information</h2>
+                                    <p>Your primary student identification and institutional communication credentials.</p>
+                                </div>
+                                <div class="profile-card-actions">
+                                    <button type="button" class="btn-forest-pill" id="editProfileBtn">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 20h9"/>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                        </svg>
+                                        <span>Edit Profile</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="profile-form-grid">
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="full_name">
+                                        <span>Full Name</span>
+                                        <span class="form-label-badge">Required</span>
+                                    </label>
+                                    <input type="text" id="full_name" name="full_name" class="form-input-warm is-view-mode" value="{{ profile.full_name }}" readonly required>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="email">
+                                        <span>Email Address</span>
+                                        <span class="form-label-badge">Required</span>
+                                    </label>
+                                    <input type="email" id="email" name="email" class="form-input-warm is-view-mode" value="{{ profile.email }}" readonly required>
+                                </div>
+
+                                <div class="form-group-warm profile-field-full">
+                                    <label class="form-label-warm" for="college_name">
+                                        <span>College / University Name</span>
+                                        <span class="form-label-badge">Required</span>
+                                    </label>
+                                    <input type="text" id="college_name" name="college_name" class="form-input-warm is-view-mode" value="{{ profile.college_name }}" readonly required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. ACADEMIC INFORMATION SECTION -->
+                        <div class="profile-section-card">
+                            <div class="profile-card-header">
+                                <div class="profile-card-title-group">
+                                    <h2>Academic Information</h2>
+                                    <p>Your department, specialization track and current semester standing.</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-form-grid">
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="specialization">
+                                        <span>Academic Specialization</span>
+                                        <span class="form-label-badge">Required</span>
+                                    </label>
+                                    <input type="text" id="specialization" name="specialization" class="form-input-warm is-view-mode" value="{{ profile.specialization }}" readonly required>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="department">
+                                        <span>Department</span>
+                                        <span class="form-label-badge">Required</span>
+                                    </label>
+                                    <input type="text" id="department" name="department" class="form-input-warm is-view-mode" value="{{ profile.department }}" readonly required>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="academic_year">
+                                        <span>Academic Year</span>
+                                    </label>
+                                    <select id="academic_year" name="academic_year" class="form-input-warm is-view-mode" disabled>
+                                        <option value="Year 1 (Freshman)" {% if profile.academic_year == 'Year 1 (Freshman)' %}selected{% endif %}>Year 1 (Freshman)</option>
+                                        <option value="Year 2 (Sophomore)" {% if profile.academic_year == 'Year 2 (Sophomore)' %}selected{% endif %}>Year 2 (Sophomore)</option>
+                                        <option value="Year 3 (Junior)" {% if profile.academic_year == 'Year 3 (Junior)' or not profile.academic_year %}selected{% endif %}>Year 3 (Junior)</option>
+                                        <option value="Year 4 (Senior)" {% if profile.academic_year == 'Year 4 (Senior)' %}selected{% endif %}>Year 4 (Senior)</option>
+                                        <option value="Graduate / Master's" {% if profile.academic_year == "Graduate / Master's" %}selected{% endif %}>Graduate / Master's</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="current_semester">
+                                        <span>Current Semester</span>
+                                    </label>
+                                    <select id="current_semester" name="current_semester" class="form-input-warm is-view-mode" disabled>
+                                        <option value="Semester 1" {% if profile.current_semester == 'Semester 1' %}selected{% endif %}>Semester 1</option>
+                                        <option value="Semester 2" {% if profile.current_semester == 'Semester 2' %}selected{% endif %}>Semester 2</option>
+                                        <option value="Semester 3" {% if profile.current_semester == 'Semester 3' %}selected{% endif %}>Semester 3</option>
+                                        <option value="Semester 4" {% if profile.current_semester == 'Semester 4' %}selected{% endif %}>Semester 4</option>
+                                        <option value="Semester 5" {% if profile.current_semester == 'Semester 5' %}selected{% endif %}>Semester 5</option>
+                                        <option value="Semester 6" {% if profile.current_semester == 'Semester 6' or not profile.current_semester %}selected{% endif %}>Semester 6</option>
+                                        <option value="Semester 7" {% if profile.current_semester == 'Semester 7' %}selected{% endif %}>Semester 7</option>
+                                        <option value="Semester 8" {% if profile.current_semester == 'Semester 8' %}selected{% endif %}>Semester 8</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. STUDY & LEARNING PREFERENCES SECTION -->
+                        <div class="profile-section-card">
+                            <div class="profile-card-header">
+                                <div class="profile-card-title-group">
+                                    <h2>Learning Preferences</h2>
+                                    <p>Configure default AI model behaviors, summarization granularity and study pacing.</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-form-grid">
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="preferred_summary_mode">
+                                        <span>Default Summarization Mode</span>
+                                    </label>
+                                    <select id="preferred_summary_mode" name="preferred_summary_mode" class="form-input-warm is-view-mode" disabled>
+                                        <option value="standard" {% if profile.preferred_summary_mode == 'standard' or not profile.preferred_summary_mode %}selected{% endif %}>Standard (Balanced Concepts & High-Yield Review)</option>
+                                        <option value="quick" {% if profile.preferred_summary_mode == 'quick' %}selected{% endif %}>Quick (5-7 High Yield Bullet Highlights)</option>
+                                        <option value="detailed" {% if profile.preferred_summary_mode == 'detailed' %}selected{% endif %}>Detailed (In-depth Section Breakdown)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="rag_precision">
+                                        <span>RAG Retrieval Precision (Top-K Excerpts)</span>
+                                    </label>
+                                    <select id="rag_precision" name="rag_precision" class="form-input-warm is-view-mode" disabled>
+                                        <option value="3" {% if profile.rag_precision == '3' or not profile.rag_precision %}selected{% endif %}>Top 3 Excerpts (Balanced Speed & Recall)</option>
+                                        <option value="5" {% if profile.rag_precision == '5' %}selected{% endif %}>Top 5 Excerpts (Comprehensive Deep Context)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="learning_mode">
+                                        <span>Preferred Learning Mode</span>
+                                    </label>
+                                    <select id="learning_mode" name="learning_mode" class="form-input-warm is-view-mode" disabled>
+                                        <option value="Visual & Concept Mapping" {% if profile.learning_mode == 'Visual & Concept Mapping' or not profile.learning_mode %}selected{% endif %}>Visual & Concept Mapping</option>
+                                        <option value="Active Recall & Quizzes" {% if profile.learning_mode == 'Active Recall & Quizzes' %}selected{% endif %}>Active Recall & Quizzes</option>
+                                        <option value="Deep Reading & Summaries" {% if profile.learning_mode == 'Deep Reading & Summaries' %}selected{% endif %}>Deep Reading & Summaries</option>
+                                        <option value="Mixed Learning Routine" {% if profile.learning_mode == 'Mixed Learning Routine' %}selected{% endif %}>Mixed Learning Routine</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-warm">
+                                    <label class="form-label-warm" for="study_target_minutes">
+                                        <span>Daily Study Focus Target (Minutes)</span>
+                                    </label>
+                                    <input type="number" id="study_target_minutes" name="study_target_minutes" class="form-input-warm is-view-mode" value="{{ profile.study_target_minutes|default(45) }}" min="15" max="360" step="5" readonly>
+                                </div>
+                            </div>
+
+                            <!-- Diagnostics Sub-section -->
+                            <div style="margin-top: 24px;">
+                                <div class="form-label-warm" style="margin-bottom: 8px;">
+                                    <span>Local AI Engine Status & Diagnostics</span>
+                                </div>
+                                <div class="diagnostics-box">
+                                    <div class="diagnostics-row">
+                                        <span><strong>Total Documents Tracked:</strong></span>
+                                        <span>{{ stats.total_documents|default(0) }} PDFs</span>
+                                    </div>
+                                    <div class="diagnostics-row">
+                                        <span><strong>Total AI Quizzes Generated:</strong></span>
+                                        <span>{{ stats.total_quizzes_generated|default(0) }} Quizzes</span>
+                                    </div>
+                                    <div class="diagnostics-row">
+                                        <span><strong>Summarization Engine:</strong></span>
+                                        <code>sshleifer/distilbart-cnn-12-6</code>
+                                    </div>
+                                    <div class="diagnostics-row">
+                                        <span><strong>Vector Embeddings Model:</strong></span>
+                                        <code>sentence-transformers/all-MiniLM-L6-v2</code>
+                                    </div>
+                                    <div class="diagnostics-row">
+                                        <span><strong>Question-Answering Engine:</strong></span>
+                                        <code>google/flan-t5-small</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 7. PROFILE ACTIONS BAR (SAVE CHANGES & CANCEL) -->
+                            <div class="profile-actions-bar" id="profileActionsBar" style="display: none;">
+                                <button type="button" class="btn-cream-cancel" id="cancelEditBtn">
+                                    <span>Cancel</span>
+                                </button>
+                                <button type="submit" class="btn-forest-pill" id="saveProfileBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    <span>Save Changes</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Client Script for Edit Toggle, Validation & Realtime Dynamic Feedback -->
+    <script>
+        (function() {
+            // Cache form elements
+            const form = document.getElementById('studentProfileForm');
+            const editBtn = document.getElementById('editProfileBtn');
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            const saveBtn = document.getElementById('saveProfileBtn');
+            const actionsBar = document.getElementById('profileActionsBar');
+            const alertBanner = document.getElementById('profileAlertBanner');
+            const alertMessage = document.getElementById('profileAlertMessage');
+
+            // Inputs and Selects
+            const inputs = form.querySelectorAll('input, select');
+            let initialFormData = {};
+
+            function snapshotFormData() {
+                initialFormData = {
+                    full_name: document.getElementById('full_name').value,
+                    email: document.getElementById('email').value,
+                    college_name: document.getElementById('college_name').value,
+                    specialization: document.getElementById('specialization').value,
+                    department: document.getElementById('department').value,
+                    academic_year: document.getElementById('academic_year').value,
+                    current_semester: document.getElementById('current_semester').value,
+                    preferred_summary_mode: document.getElementById('preferred_summary_mode').value,
+                    rag_precision: document.getElementById('rag_precision').value,
+                    learning_mode: document.getElementById('learning_mode').value,
+                    study_target_minutes: document.getElementById('study_target_minutes').value
+                };
+            }
+
+            // Capture initial snapshot
+            snapshotFormData();
+
+            function showAlert(message, type) {
+                alertBanner.className = 'profile-alert-banner ' + type;
+                alertMessage.textContent = message;
+                alertBanner.style.display = 'flex';
+                alertBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function setEditMode(isEditing) {
+                inputs.forEach(el => {
+                    if (isEditing) {
+                        el.removeAttribute('readonly');
+                        el.removeAttribute('disabled');
+                        el.classList.remove('is-view-mode');
+                    } else {
+                        if (el.tagName === 'SELECT') {
+                            el.setAttribute('disabled', 'disabled');
+                        } else {
+                            el.setAttribute('readonly', 'readonly');
+                        }
+                        el.classList.add('is-view-mode');
+                    }
+                });
+
+                if (isEditing) {
+                    editBtn.style.display = 'none';
+                    actionsBar.style.display = 'flex';
+                    document.getElementById('full_name').focus();
+                } else {
+                    editBtn.style.display = 'inline-flex';
+                    actionsBar.style.display = 'none';
+                }
+            }
+
+            // Edit Profile click
+            editBtn.addEventListener('click', function() {
+                snapshotFormData();
+                setEditMode(true);
+            });
+
+            // Cancel click
+            cancelBtn.addEventListener('click', function() {
+                // Restore values
+                Object.keys(initialFormData).forEach(key => {
+                    const el = document.getElementById(key);
+                    if (el) el.value = initialFormData[key];
+                });
+                setEditMode(false);
+                alertBanner.style.display = 'none';
+            });
+
+            // Form Submit handler
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Validation
+                const fullName = document.getElementById('full_name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const collegeName = document.getElementById('college_name').value.trim();
+                const department = document.getElementById('department').value.trim();
+                const specialization = document.getElementById('specialization').value.trim();
+
+                if (!fullName || fullName.length < 2) {
+                    showAlert('Please enter a valid full name (at least 2 characters).', 'error');
+                    document.getElementById('full_name').focus();
+                    return;
+                }
+
+                if (!email || !email.includes('@') || !email.includes('.')) {
+                    showAlert('Please enter a valid email address.', 'error');
+                    document.getElementById('email').focus();
+                    return;
+                }
+
+                if (!collegeName) {
+                    showAlert('Please enter your college or institution name.', 'error');
+                    document.getElementById('college_name').focus();
+                    return;
+                }
+
+                if (!department) {
+                    showAlert('Please enter your academic department.', 'error');
+                    document.getElementById('department').focus();
+                    return;
+                }
+
+                if (!specialization) {
+                    showAlert('Please enter your academic specialization.', 'error');
+                    document.getElementById('specialization').focus();
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span>Saving...</span>';
+
+                const payload = {
+                    full_name: fullName,
+                    email: email,
+                    college_name: collegeName,
+                    department: department,
+                    specialization: specialization,
+                    academic_year: document.getElementById('academic_year').value,
+                    current_semester: document.getElementById('current_semester').value,
+                    preferred_summary_mode: document.getElementById('preferred_summary_mode').value,
+                    rag_precision: document.getElementById('rag_precision').value,
+                    learning_mode: document.getElementById('learning_mode').value,
+                    study_target_minutes: document.getElementById('study_target_minutes').value
+                };
+
+                try {
+                    const response = await fetch("{{ url_for('main.settings_view') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        const prof = data.profile;
+                        showAlert('Profile updated successfully! All changes have been saved.', 'success');
+
+                        // Immediately update dynamic UI components
+                        if (prof.first_name) {
+                            document.getElementById('heroGreeting').innerHTML = `<span>Welcome back, ${prof.first_name}!</span> <span>🌿</span>`;
+                        }
+                        if (prof.initials) {
+                            document.getElementById('heroAvatarCircle').childNodes[0].nodeValue = prof.initials + ' ';
+                            const topAvatar = document.getElementById('topbarAvatar');
+                            if (topAvatar) topAvatar.textContent = prof.initials;
+                        }
+                        if (prof.full_name) {
+                            document.getElementById('cardFullName').textContent = prof.full_name;
+                            document.getElementById('cardFullName').title = prof.full_name;
+                            const topName = document.getElementById('topbarName');
+                            if (topName) topName.textContent = prof.full_name;
+                        }
+                        if (prof.email) {
+                            document.getElementById('cardEmail').textContent = prof.email;
+                            document.getElementById('cardEmail').title = prof.email;
+                        }
+                        if (prof.specialization) {
+                            document.getElementById('cardSpecialization').textContent = prof.specialization;
+                            document.getElementById('cardSpecialization').title = prof.specialization;
+                        }
+                        if (prof.college_name) {
+                            document.getElementById('cardCollege').textContent = prof.college_name;
+                            document.getElementById('cardCollege').title = prof.college_name;
+                        }
+                        if (prof.department) {
+                            document.getElementById('cardDepartment').textContent = prof.department;
+                            document.getElementById('cardDepartment').title = prof.department;
+                            const depTag = document.getElementById('heroDepartmentTag');
+                            if (depTag) depTag.textContent = prof.department;
+                        }
+                        if (prof.academic_year) {
+                            document.getElementById('cardYear').textContent = prof.academic_year;
+                            document.getElementById('cardYear').title = prof.academic_year;
+                            const yearTag = document.getElementById('heroYearTag');
+                            if (yearTag) yearTag.textContent = prof.academic_year;
+                        }
+                        if (prof.current_semester) {
+                            document.getElementById('cardSemester').textContent = prof.current_semester;
+                            const semTag = document.getElementById('heroSemesterTag');
+                            if (semTag) semTag.textContent = prof.current_semester;
+                        }
+
+                        // Update snapshot
+                        snapshotFormData();
+                        setEditMode(false);
+                    } else {
+                        showAlert(data.error || 'Failed to update student profile.', 'error');
+                    }
+                } catch (err) {
+                    showAlert('Network error while saving profile. Please try again.', 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Save Changes</span>';
+                }
+            });
+        })();
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

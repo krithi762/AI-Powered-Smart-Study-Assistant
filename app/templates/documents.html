@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy.ai - My Study Documents | Digital Study Library</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="app-topbar">
+                <button class="mobile-sidebar-toggle" id="mobileMenuBtn">☰</button>
+                <div class="topbar-search-form">
+                    <div class="search-input-wrap">
+                        <input type="text" class="search-input" id="docSearchInput" placeholder="Search your library documents, notes...">
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-pill">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-name-text">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Page Header -->
+                <div class="editorial-page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <div class="editorial-tagline">Academic Archive & Catalog</div>
+                        <h1 class="editorial-title">Uploaded Study Materials</h1>
+                        <p class="editorial-subtitle">Manage all uploaded PDF textbooks, lecture slides, and syllabus notes with local extraction.</p>
+                    </div>
+                    <button class="btn-terracotta-pill" onclick="document.getElementById('docUploadModal').style.display = 'flex'">
+                        <span>+ Upload New PDF</span>
+                    </button>
+                </div>
+
+                <!-- Library Controls -->
+                <div class="library-controls-bar">
+                    <div class="library-filter-tags">
+                        <span class="filter-pill-tag active">All Materials ({{ documents|length }})</span>
+                        <span class="filter-pill-tag">Lecture Notes</span>
+                        <span class="filter-pill-tag">Textbooks</span>
+                        <span class="filter-pill-tag">Exam Guides</span>
+                    </div>
+                    <div class="library-actions-wrap">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Tracked: <strong>{{ documents|length }}</strong> Documents</span>
+                    </div>
+                </div>
+
+                <!-- Flash Notifications -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div style="margin-bottom: 20px;">
+                            {% for category, message in messages %}
+                                <div style="padding: 12px 18px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-warm); color: var(--text-primary); margin-bottom: 8px;">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Documents Grid -->
+                {% if documents and documents|length > 0 %}
+                <div class="documents-card-grid" id="documentsGrid">
+                    {% for doc in documents %}
+                    <div class="document-library-card" data-filename="{{ doc.original_filename|lower }}">
+                        <div>
+                            <div class="doc-card-top">
+                                <div class="doc-cover-thumb">
+                                    <span style="font-size: 1.4rem;">📄</span>
+                                    <span style="font-size: 0.62rem; font-weight: 800; text-transform: uppercase;">PDF</span>
+                                </div>
+                                <div class="doc-details-col">
+                                    <a href="{{ url_for('main.document_details', doc_id=doc.id) }}" class="doc-title-link" title="{{ doc.original_filename }}">
+                                        {{ doc.original_filename }}
+                                    </a>
+                                    <div class="doc-meta-strip">
+                                        <span>📖 {{ doc.total_pages }} Pages</span>
+                                        <span>•</span>
+                                        <span>📝 {{ doc.total_words }} Words</span>
+                                    </div>
+                                    <div class="doc-status-badge badge-ready">
+                                        <span>✓</span>
+                                        <span>Extracted & Indexed</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="doc-card-actions">
+                            <a href="{{ url_for('main.document_details', doc_id=doc.id) }}" class="btn-card-action" title="AI Summarizer">
+                                <span style="font-size: 1rem;">✨</span>
+                                <span>Summarize</span>
+                            </a>
+                            <a href="{{ url_for('main.document_chat', doc_id=doc.id) }}" class="btn-card-action" title="Study Chat">
+                                <span style="font-size: 1rem;">💬</span>
+                                <span>Study Chat</span>
+                            </a>
+                            <a href="{{ url_for('main.new_quiz_config', doc_id=doc.id) }}" class="btn-card-action" title="Generate AI Quiz">
+                                <span style="font-size: 1rem;">📝</span>
+                                <span>Quiz</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- Empty State -->
+                <div style="background: var(--bg-secondary); border: 1.5px dashed var(--border-warm); border-radius: var(--radius-lg); padding: 48px 32px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 12px;">📚</div>
+                    <h3 style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin-bottom: 8px;">Your study desk is waiting for its first document</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px;">
+                        Upload your lecture slides, textbooks, or research notes to unlock AI abstractive summaries, contextual RAG chat, and automated MCQ quizzes.
+                    </p>
+                    <button class="btn-terracotta-pill" onclick="document.getElementById('docUploadModal').style.display = 'flex'">
+                        <span>Upload Your First PDF</span>
+                    </button>
+                </div>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="docUploadModal" style="display: none; position: fixed; inset: 0; background: rgba(23, 60, 43, 0.4); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-warm); border-radius: var(--radius-lg); padding: 32px; max-width: 520px; width: 100%; box-shadow: var(--shadow-elevated);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary);">Upload Study Material</h3>
+                <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);" onclick="document.getElementById('docUploadModal').style.display = 'none'">×</button>
+            </div>
+            <form action="{{ url_for('main.upload_file') }}" method="POST" enctype="multipart/form-data">
+                <div class="quick-upload-card" onclick="document.getElementById('modalFileInput').click()" style="margin-top: 0; margin-bottom: 20px;">
+                    <input type="file" id="modalFileInput" name="file" accept=".pdf" style="display: none;" onchange="this.form.submit()">
+                    <div class="upload-icon-circle">📂</div>
+                    <div class="upload-title">Select or drag PDF here</div>
+                    <div class="upload-hint">Up to 32MB • Standard PDF documents</div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Real-time library search
+        const searchInput = document.getElementById('docSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.document-library-card');
+                cards.forEach(card => {
+                    const fname = card.getAttribute('data-filename') || '';
+                    card.style.display = fname.includes(term) ? 'flex' : 'none';
+                });
+            });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+,
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Study Materials - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input type="text" placeholder="Search documents or notes...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.documents_list') }}" class="topbar-icon-btn" title="View Library">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        </svg>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Page Header -->
+                <div class="editorial-page-header">
+                    <div class="editorial-tagline">Academic Document Ingestion</div>
+                    <h1 class="editorial-title">Upload Study Materials</h1>
+                    <p class="editorial-subtitle">Add your lecture notes, textbook chapters, or syllabi to your digital
+                        study desk for automated AI summarization, semantic RAG chat, and quiz synthesis.</p>
+                </div>
+
+                <!-- Client Alerts (JS dynamic messages) -->
+                <div id="client-alert" class="flash-container hidden" style="margin-bottom: 20px;"></div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div style="margin-bottom: 20px;">
+                    {% for category, message in messages %}
+                    <div
+                        style="padding: 12px 18px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-warm); color: var(--text-primary); margin-bottom: 8px;">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- PDF Upload Card -->
+                <section class="editorial-card" id="upload-section" style="margin-bottom: 30px; position: relative;">
+                    <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+
+                    <div
+                        style="margin-bottom: 20px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                        <h2
+                            style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            Upload PDF Study Material
+                        </h2>
+                        <p class="editorial-subtitle" style="margin: 0;">PDF format only &bull; Maximum file size: 16 MB
+                        </p>
+                    </div>
+
+                    <form id="upload-form" action="{{ url_for('main.upload_file') }}" method="POST"
+                        enctype="multipart/form-data">
+                        <div class="quick-dropzone" id="dropzone"
+                            style="cursor: pointer; padding: 40px 20px; margin-bottom: 20px;">
+                            <label for="pdf-file-input" class="sr-only" style="display: none;">Choose PDF
+                                document</label>
+                            <input type="file" id="pdf-file-input" name="file" accept=".pdf" class="dropzone-input"
+                                style="display: none;" required>
+
+                            <div class="dropzone-content" id="dropzone-prompt">
+                                <div class="upload-icon-circle" style="font-size: 2.8rem; margin-bottom: 12px;">🌿</div>
+                                <h3 class="upload-title"
+                                    style="font-family: var(--font-heading); font-size: 1.35rem; color: var(--text-primary); margin: 0 0 6px 0;">
+                                    Drop your study PDF here, or <span
+                                        style="color: var(--terracotta); text-decoration: underline;">browse
+                                        files</span>
+                                </h3>
+                                <p class="upload-hint"
+                                    style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                                    Supports single or multi-page PDF documents up to 16 MB
+                                </p>
+                            </div>
+
+                            <!-- Selected File Preview -->
+                            <div class="selected-file-preview hidden" id="selected-file-preview"
+                                style="display: none; align-items: center; justify-content: space-between; background: #fff; border: 1.5px solid var(--terracotta); border-radius: var(--radius-md); padding: 14px 20px; max-width: 440px; margin: 0 auto;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span
+                                        style="background: var(--terracotta); color: #fff; font-weight: 800; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px;">PDF</span>
+                                    <div>
+                                        <div class="file-name" id="preview-file-name"
+                                            style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">
+                                            filename.pdf</div>
+                                        <div class="file-size" id="preview-file-size"
+                                            style="font-size: 0.78rem; color: var(--text-secondary); font-family: monospace;">
+                                            0 KB</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-clear-file" id="btn-clear-file"
+                                    style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);"
+                                    title="Remove file">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upload Action Button -->
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button type="submit" class="btn-terracotta-pill" id="btn-submit-upload"
+                                style="padding: 12px 28px; font-size: 0.95rem; cursor: pointer;" disabled>
+                                📤 Upload & Process Document
+                            </button>
+                        </div>
+
+                        <!-- Progress & Processing Overlay -->
+                        <div class="upload-progress-container hidden" id="upload-progress-container"
+                            style="display: none; margin-top: 20px; background: var(--bg-warm); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-warm);">
+                            <div
+                                style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+                                <div class="progress-bar-fill" id="progress-bar-fill"
+                                    style="background: var(--terracotta); height: 100%; width: 50%;"></div>
+                            </div>
+                            <div
+                                style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                                <span>🌿</span>
+                                <span class="progress-text" id="progress-status-text">Validating & extracting
+                                    text...</span>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Recently Uploaded Documents -->
+                <section style="margin-bottom: 40px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px;">
+                        <div>
+                            <div class="editorial-tagline">Library Additions</div>
+                            <h2
+                                style="font-family: var(--font-heading); font-size: 1.45rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Recently Uploaded Documents
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">Study materials processed and indexed in
+                                the local database</p>
+                        </div>
+                        <a href="{{ url_for('main.documents_list') }}"
+                            style="font-size: 0.85rem; color: var(--terracotta); text-decoration: none; font-weight: 600;">
+                            View All Documents →
+                        </a>
+                    </div>
+
+                    {% if recent_documents %}
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+                        {% for doc in recent_documents %}
+                        <div class="editorial-card" style="background: #fff; padding: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span
+                                    style="background: var(--terracotta); color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">PDF</span>
+                                <span style="font-size: 0.75rem; color: var(--forest-green); font-weight: 700;">{{
+                                    doc.processing_status|capitalize }}</span>
+                            </div>
+                            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0 0 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                title="{{ doc.original_filename }}">
+                                {{ doc.original_filename }}
+                            </h3>
+                            <div
+                                style="display: flex; gap: 12px; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px;">
+                                <span>{{ doc.total_pages }} pages</span>
+                                <span>&bull;</span>
+                                <span>{{ "{:,}".format(doc.total_words) }} words</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('main.document_details', doc_id=doc.id) }}" class="btn-card-action"
+                                    style="flex: 1; text-align: center; text-decoration: none; font-size: 0.78rem; padding: 6px 10px;">
+                                    Summarize
+                                </a>
+                                <a href="{{ url_for('main.document_chat', doc_id=doc.id) }}" class="btn-card-action"
+                                    style="flex: 1; text-align: center; text-decoration: none; font-size: 0.78rem; padding: 6px 10px;">
+                                    Study Chat
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="editorial-card" style="text-align: center; padding: 36px 20px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 8px;">📚</div>
+                        <h4
+                            style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                            No Documents Uploaded Yet</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Upload your first
+                            lecture slides or textbook chapter above.</p>
+                    </div>
+                    {% endif %}
+                </section>
+            </main>
+
+            <footer
+                style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

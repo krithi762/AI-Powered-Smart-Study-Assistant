@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Generator & Assessment - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .quiz-config-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .quiz-config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .form-select, .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            background: #fff;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+        .form-select:focus, .form-input:focus {
+            border-color: var(--terracotta);
+        }
+        .form-hint {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .difficulty-cards-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .difficulty-card-label {
+            cursor: pointer;
+        }
+        .difficulty-card-label input[type="radio"] {
+            display: none;
+        }
+        .difficulty-card {
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            background: #fff;
+            transition: all 0.2s ease;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .difficulty-card-label input[type="radio"]:checked + .difficulty-card {
+            border-color: var(--terracotta);
+            background: var(--cream-soft);
+            box-shadow: 0 0 0 2px rgba(201, 111, 72, 0.2);
+        }
+        .tier-name {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+        .tier-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+        .pill-selectors-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .pill-radio-label {
+            cursor: pointer;
+        }
+        .pill-radio-label input[type="radio"] {
+            display: none;
+        }
+        .pill-button {
+            display: inline-block;
+            padding: 8px 16px;
+            border: 1.5px solid var(--border-warm);
+            border-radius: 20px;
+            background: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+        }
+        .pill-radio-label input[type="radio"]:checked + .pill-button {
+            border-color: var(--terracotta);
+            background: var(--terracotta);
+            color: #fff;
+        }
+        .quiz-mini-item {
+            background: #fff;
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .attempt-mini-item {
+            background: #fff;
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search quizzes, topics, or study materials...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.quiz_history_view') }}" class="topbar-icon-btn" title="Quiz History">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 8v4l3 3"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Page Header -->
+                <div class="editorial-page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <div class="editorial-tagline">AI Assessment Engine</div>
+                        <h1 class="editorial-title">AI Quiz Generator & Assessment</h1>
+                        <p class="editorial-subtitle">
+                            Synthesize interactive Multiple-Choice Questions (MCQs) directly from your study PDFs with calibrated difficulty, verified citations, and instant grading.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('main.quiz_history_view') }}" class="btn-card-action" style="background: var(--bg-secondary); text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 20px;">
+                        📜 View Quiz History →
+                    </a>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div style="margin-bottom: 20px;">
+                            {% for category, message in messages %}
+                                <div style="padding: 12px 18px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-warm); color: var(--text-primary); margin-bottom: 8px;">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="quiz-config-grid">
+                    <!-- Left: Configuration Form Card -->
+                    <div class="editorial-card" style="position: relative;">
+                        <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border-warm); padding-bottom: 14px; margin-bottom: 20px;">
+                            <div>
+                                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                    Configure New Quiz
+                                </h2>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                                    Choose study material, difficulty tier, and parameters
+                                </p>
+                            </div>
+                            <span style="background: var(--bg-warm); font-size: 0.78rem; font-weight: 700; color: var(--forest-green); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-warm);">
+                                📝 Local NLP Exam Builder
+                            </span>
+                        </div>
+
+                        <form id="quiz-generation-form" onsubmit="return handleGenerateQuiz(event)">
+                            <!-- 1. PDF Document Selection -->
+                            <div class="form-group">
+                                <label for="select-document" class="form-label">
+                                    <span>1. Select Study Material (PDF)</span>
+                                    <span style="color: var(--terracotta);">*</span>
+                                </label>
+                                {% if documents %}
+                                    <select id="select-document" name="document_id" class="form-select" required>
+                                        <option value="" disabled {% if not selected_doc_id %}selected{% endif %}>Choose an uploaded PDF...</option>
+                                        {% for doc in documents %}
+                                            {% if doc.processing_status != 'scanned_no_text' and doc.total_words > 0 %}
+                                                <option value="{{ doc.id }}" {% if selected_doc_id == doc.id %}selected{% endif %}>
+                                                    {{ doc.original_filename }} ({{ doc.total_pages }} pages, {{ doc.total_words }} words)
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <span class="form-hint">Only text-extractable PDFs can be used for automated question generation.</span>
+                                {% else %}
+                                    <div style="background: var(--bg-secondary); border: 1px dashed var(--border-warm); border-radius: var(--radius-sm); padding: 18px; text-align: center;">
+                                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">No processed PDF documents available. Please upload a study material first.</p>
+                                        <a href="{{ url_for('main.documents_list') }}" class="btn-terracotta-pill" style="text-decoration: none; font-size: 0.85rem;">Upload PDF Material</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- 2. Quiz Title -->
+                            <div class="form-group">
+                                <label for="quiz-title-input" class="form-label">
+                                    <span>2. Quiz Title (Optional)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="quiz-title-input"
+                                    name="title"
+                                    class="form-input"
+                                    placeholder="e.g. Operating Systems Unit 3 Practice (leave blank for automatic title)"
+                                    maxlength="120"
+                                >
+                            </div>
+
+                            <!-- 3. Difficulty Level -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <span>3. Select Difficulty Level</span>
+                                    <span style="color: var(--terracotta);">*</span>
+                                </label>
+                                <div class="difficulty-cards-row">
+                                    <label class="difficulty-card-label">
+                                        <input type="radio" name="difficulty" value="easy">
+                                        <div class="difficulty-card">
+                                            <span class="tier-name" style="color: var(--sage-green);">🌱 Easy</span>
+                                            <p class="tier-desc">Core definitions, basic terms, and direct factual recall.</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="difficulty-card-label">
+                                        <input type="radio" name="difficulty" value="medium" checked>
+                                        <div class="difficulty-card">
+                                            <span class="tier-name" style="color: #9A6E24;">⚖️ Medium</span>
+                                            <p class="tier-desc">Concept understanding, mechanisms, and process comparisons.</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="difficulty-card-label">
+                                        <input type="radio" name="difficulty" value="hard">
+                                        <div class="difficulty-card">
+                                            <span class="tier-name" style="color: var(--terracotta);">🔥 Hard</span>
+                                            <p class="tier-desc">Advanced deduction, condition constraints, and scenario analysis.</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 4. Number of Questions -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <span>4. Number of Questions</span>
+                                    <span style="color: var(--terracotta);">*</span>
+                                </label>
+                                <div class="pill-selectors-row" id="num-questions-row">
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="num_questions" value="5" checked>
+                                        <span class="pill-button">5 Questions</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="num_questions" value="10">
+                                        <span class="pill-button">10 Questions</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="num_questions" value="15">
+                                        <span class="pill-button">15 Questions</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="num_questions" value="20">
+                                        <span class="pill-button">20 Questions</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 5. Timer Settings -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <span>5. Quiz Timer Mode</span>
+                                </label>
+                                <div class="pill-selectors-row" id="timer-settings-row">
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="time_limit_minutes" value="0" checked>
+                                        <span class="pill-button">Untimed</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="time_limit_minutes" value="5">
+                                        <span class="pill-button">⏱ 5 Minutes</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="time_limit_minutes" value="10">
+                                        <span class="pill-button">⏱ 10 Minutes</span>
+                                    </label>
+                                    <label class="pill-radio-label">
+                                        <input type="radio" name="time_limit_minutes" value="15">
+                                        <span class="pill-button">⏱ 15 Minutes</span>
+                                    </label>
+                                </div>
+                                <span class="form-hint">Timed quizzes automatically submit answers when the countdown timer reaches zero.</span>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div style="margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border-warm);">
+                                <button type="submit" id="btn-generate-quiz" class="btn-terracotta-pill" style="width: 100%; padding: 14px 24px; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;" {% if not documents %}disabled{% endif %}>
+                                    <span>✨ Generate AI Quiz</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Generated Quizzes & Recent Attempts -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Generated Quizzes -->
+                        <div class="editorial-card" style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                                <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0;">
+                                    Available Quizzes
+                                </h3>
+                                <span style="background: var(--bg-warm); font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: var(--text-secondary);">{{ quizzes|length }}</span>
+                            </div>
+
+                            {% if quizzes %}
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    {% for q in quizzes[:6] %}
+                                        <div class="quiz-mini-item">
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ q.title }}">
+                                                    {{ q.title }}
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                                                    {{ q.total_questions }} Qs &bull; <span style="text-transform: capitalize;">{{ q.difficulty }}</span>
+                                                    {% if q.attempt_count > 0 %}
+                                                        &bull; <strong style="color: var(--forest-green);">Best: {{ q.best_percentage }}%</strong>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <a href="{{ url_for('main.take_quiz_view', quiz_id=q.id) }}" class="btn-terracotta-pill" style="padding: 6px 14px; font-size: 0.78rem; text-decoration: none;">
+                                                Take →
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; text-align: center; margin: 16px 0;">
+                                    No quizzes generated yet. Use the configuration form to generate your first quiz!
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Recent Attempts -->
+                        <div class="editorial-card" style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                                <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0;">
+                                    Recent Attempts
+                                </h3>
+                                <a href="{{ url_for('main.quiz_history_view') }}" style="font-size: 0.8rem; color: var(--terracotta); text-decoration: none; font-weight: 600;">All History →</a>
+                            </div>
+
+                            {% if recent_attempts %}
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    {% for att in recent_attempts[:5] %}
+                                        <div class="attempt-mini-item">
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    {{ att.quiz_title }}
+                                                </div>
+                                                <div style="font-size: 0.72rem; color: var(--text-secondary);">
+                                                    {{ att.score }}/{{ att.total_questions }} Correct &bull; {{ att.completed_at[0:10] }}
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-weight: 700; font-size: 0.85rem; {% if att.passed %}color: var(--forest-green);{% else %}color: var(--terracotta);{% endif %}">
+                                                    {{ att.percentage }}%
+                                                </span>
+                                                <a href="{{ url_for('main.quiz_results_view', attempt_id=att.id) }}" style="font-size: 0.8rem; text-decoration: none;" title="Review Results">
+                                                    🔍
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; text-align: center; margin: 16px 0;">
+                                    No recorded attempts yet. Complete a quiz to see your scores here.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Loading Modal Overlay -->
+            <div id="quiz-generating-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(23, 60, 43, 0.4); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);">
+                <div class="editorial-card" style="max-width: 420px; width: 90%; text-align: center; padding: 32px 24px;">
+                    <div style="font-size: 3rem; margin-bottom: 12px; animation: spin 2s linear infinite; display: inline-block;">🌿</div>
+                    <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin: 0 0 8px 0;">
+                        Generating AI Study Quiz...
+                    </h3>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 16px 0;">
+                        Extracting core concepts from document, formulating calibrated options, and verifying page citations.
+                    </p>
+                    <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: var(--terracotta); height: 100%; width: 60%; animation: pulse 1.5s ease-in-out infinite;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        async function handleGenerateQuiz(event) {
+            event.preventDefault();
+            const docSelect = document.getElementById('select-document');
+            const docId = docSelect ? docSelect.value : null;
+            if (!docId) {
+                alert('Please select an uploaded PDF document.');
+                return false;
+            }
+
+            const modal = document.getElementById('quiz-generating-modal');
+            if (modal) modal.style.display = 'flex';
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const payload = {
+                document_id: docId,
+                title: formData.get('title') || '',
+                difficulty: formData.get('difficulty') || 'medium',
+                num_questions: parseInt(formData.get('num_questions') || 5, 10),
+                time_limit_minutes: parseInt(formData.get('time_limit_minutes') || 0, 10),
+            };
+
+            try {
+                const response = await fetch(`/document/${docId}/quiz/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    if (modal) modal.style.display = 'none';
+                    alert(data.error || 'Failed to generate quiz. Please try again.');
+                }
+            } catch (err) {
+                if (modal) modal.style.display = 'none';
+                alert('Network or server error while generating quiz.');
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

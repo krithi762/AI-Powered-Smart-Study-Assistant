@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity History - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .activity-filter-form {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .filter-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .editorial-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .editorial-table th {
+            padding: 12px 16px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1.5px solid var(--border-warm);
+            background: var(--bg-warm);
+        }
+
+        .editorial-table td {
+            padding: 14px 16px;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-warm);
+            vertical-align: middle;
+        }
+
+        .editorial-table tr:hover td {
+            background: rgba(255, 249, 240, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input type="text" placeholder="Search study diary & activity logs...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.index') }}" class="topbar-icon-btn" title="Study Desk">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Header -->
+                <div class="editorial-page-header">
+                    <div class="editorial-tagline">Chronological Study Diary</div>
+                    <h1 class="editorial-title">Activity History</h1>
+                    <p class="editorial-subtitle">A comprehensive chronological timeline tracking every document upload,
+                        AI summary generation, study chat question, and quiz assessment.</p>
+                </div>
+
+                <!-- Filter Toolbar -->
+                <div class="editorial-card" style="margin-bottom: 24px; padding: 18px 20px;">
+                    <form method="GET" action="{{ url_for('main.activity_history_view') }}"
+                        class="activity-filter-form">
+                        <div class="filter-col">
+                            <label for="filter-type"
+                                style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">Activity
+                                Type</label>
+                            <select id="filter-type" name="type"
+                                style="padding: 8px 12px; border-radius: 16px; border: 1.5px solid var(--border-warm); background: #fff; font-size: 0.85rem;"
+                                onchange="this.form.submit()">
+                                <option value="all" {% if current_type=='all' %}selected{% endif %}>All Activities
+                                </option>
+                                <option value="upload" {% if current_type=='upload' %}selected{% endif %}>PDF Uploads
+                                </option>
+                                <option value="summarize" {% if current_type=='summarize' %}selected{% endif %}>AI
+                                    Summaries</option>
+                                <option value="chat" {% if current_type=='chat' %}selected{% endif %}>Study Chatbot
+                                </option>
+                                <option value="quiz_generate" {% if current_type=='quiz_generate' %}selected{% endif %}>
+                                    Quizzes Generated</option>
+                                <option value="quiz_attempt" {% if current_type=='quiz_attempt' %}selected{% endif %}>
+                                    Quiz Attempts</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-col">
+                            <label for="filter-doc"
+                                style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">Document</label>
+                            <select id="filter-doc" name="document_id"
+                                style="padding: 8px 12px; border-radius: 16px; border: 1.5px solid var(--border-warm); background: #fff; font-size: 0.85rem;"
+                                onchange="this.form.submit()">
+                                <option value="">All Documents</option>
+                                {% for d in documents %}
+                                <option value="{{ d.id }}" {% if selected_doc_id==d.id %}selected{% endif %}>{{
+                                    d.original_filename }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-col">
+                            <label for="filter-from"
+                                style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">From
+                                Date</label>
+                            <input type="date" id="filter-from" name="from" value="{{ date_from or '' }}"
+                                style="padding: 7px 12px; border-radius: 16px; border: 1.5px solid var(--border-warm); background: #fff; font-family: monospace; font-size: 0.82rem;"
+                                onchange="this.form.submit()">
+                        </div>
+
+                        <div class="filter-col">
+                            <label for="filter-to"
+                                style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">To Date</label>
+                            <input type="date" id="filter-to" name="to" value="{{ date_to or '' }}"
+                                style="padding: 7px 12px; border-radius: 16px; border: 1.5px solid var(--border-warm); background: #fff; font-family: monospace; font-size: 0.82rem;"
+                                onchange="this.form.submit()">
+                        </div>
+
+                        <div class="filter-col">
+                            <a href="{{ url_for('main.activity_history_view') }}" class="btn-card-action"
+                                style="padding: 8px 16px; border-radius: 16px; font-size: 0.8rem; text-decoration: none;">
+                                Reset Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Activity Records Table -->
+                <div class="editorial-card"
+                    style="padding: 0; overflow: hidden; background: #fff; margin-bottom: 40px;">
+                    <div
+                        style="padding: 16px 20px; border-bottom: 1.5px solid var(--border-warm); display: flex; justify-content: space-between; align-items: center;">
+                        <h3
+                            style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 0;">
+                            Activity Records
+                        </h3>
+                        <span
+                            style="background: var(--bg-warm); font-size: 0.8rem; font-weight: 700; color: var(--forest-green); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border-warm);">
+                            {{ total_count }} Total Records
+                        </span>
+                    </div>
+
+                    {% if activities %}
+                    <div style="overflow-x: auto;">
+                        <table class="editorial-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Type</th>
+                                    <th>Activity Description</th>
+                                    <th>Document</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for a in activities %}
+                                <tr>
+                                    <td
+                                        style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">
+                                        {{ (a.created_at or '')[0:16].replace('T', ' ') }}
+                                    </td>
+                                    <td>
+                                        <span
+                                            style="background: var(--bg-warm); border: 1px solid var(--border-warm); padding: 3px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">
+                                            {{ a.activity_type }}
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--text-primary); line-height: 1.4;">
+                                        {{ a.description }}
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 0.82rem;">
+                                        {% if a.document_id %}
+                                        <a href="{{ url_for('main.document_details', doc_id=a.document_id) }}"
+                                            style="color: var(--terracotta); text-decoration: none;">
+                                            {{ a.original_filename or 'Document #' ~ a.document_id }}
+                                        </a>
+                                        {% else %}
+                                        <span style="color: var(--text-secondary);">&mdash;</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if a.activity_type == 'quiz_attempt' and a.metadata and
+                                        a.metadata.get('attempt_id') %}
+                                        <a href="{{ url_for('main.quiz_results_view', attempt_id=a.metadata.attempt_id) }}"
+                                            class="btn-card-action"
+                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; text-decoration: none;">
+                                            View Result →
+                                        </a>
+                                        {% elif a.document_id %}
+                                        <a href="{{ url_for('main.document_details', doc_id=a.document_id) }}"
+                                            class="btn-card-action"
+                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; text-decoration: none;">
+                                            View Doc →
+                                        </a>
+                                        {% else %}
+                                        <span style="color: var(--text-secondary);">&mdash;</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div style="padding: 48px 32px; text-align: center;">
+                        <div style="font-size: 2.8rem; margin-bottom: 8px;">📖</div>
+                        <h4
+                            style="font-family: var(--font-heading); font-size: 1.3rem; color: var(--text-primary); margin: 0 0 6px 0;">
+                            No Activity Records Found</h4>
+                        <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0;">No activities match your
+                            current filter parameters.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </main>
+
+            <footer
+                style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

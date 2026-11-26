@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Summarizer - SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .summarizer-doc-picker {
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        .doc-select-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            background: #FFFDF9;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+            cursor: pointer;
+        }
+        .doc-select-input:focus {
+            border-color: var(--terracotta);
+            background: #fff;
+        }
+        .doc-preview-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-warm);
+        }
+        .doc-preview-item {
+            background: var(--bg-warm);
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+        }
+        .doc-preview-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .doc-preview-value {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .ocr-warning-box {
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: rgba(232, 199, 122, 0.2);
+            border: 1.5px solid rgba(232, 199, 122, 0.6);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN WORKSPACE -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search summaries, concepts, or topics..." id="page-search-input">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.documents_list') }}" class="topbar-icon-btn" title="Documents Library">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Breadcrumbs -->
+                <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                    <a href="{{ url_for('main.index') }}" style="color: var(--terracotta); text-decoration: none; font-weight: 600;">Study Desk</a>
+                    <span>/</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">AI Summarizer</span>
+                </div>
+
+                <!-- Page Header Banner -->
+                <div class="editorial-card" style="margin-bottom: 24px; position: relative; overflow: hidden; background: linear-gradient(135deg, #FFFDF9 0%, #F5ECE0 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                        <div style="display: flex; gap: 18px; align-items: flex-start;">
+                            <div style="background: var(--forest-green); color: #fff; font-size: 1.3rem; padding: 14px 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); text-align: center;">
+                                🌿
+                            </div>
+                            <div>
+                                <div class="editorial-tagline" style="margin-bottom: 4px;">DistilBART Neural Summarization Engine</div>
+                                <h1 style="font-family: var(--font-heading); font-size: 1.85rem; color: var(--text-primary); margin: 0 0 6px 0; line-height: 1.2;">
+                                    AI Study Summarizer
+                                </h1>
+                                <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; max-width: 650px;">
+                                    Generate abstractive study summaries, key definition cards, high-yield exam takeaways, and TF-IDF topic keywords for any uploaded document.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <a href="{{ url_for('main.upload_center') }}" class="btn-terracotta-pill" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <span>+ Upload PDF</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div style="margin-bottom: 20px;">
+                            {% for category, message in messages %}
+                                <div style="padding: 12px 18px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-warm); color: var(--text-primary); margin-bottom: 8px;">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if documents and documents|length > 0 %}
+                    <!-- 1. Document Picker & Metadata Card -->
+                    <div class="summarizer-doc-picker">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                            <label for="summarizer-doc-select" style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <span>📄 Select Document to Summarize:</span>
+                            </label>
+                            {% if selected_doc %}
+                                <a href="{{ url_for('main.document_details', doc_id=selected_doc.id) }}" style="font-size: 0.8rem; font-weight: 600; color: var(--terracotta); text-decoration: none;">
+                                    View Full Document Dossier →
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        <select id="summarizer-doc-select" class="doc-select-input" onchange="window.location.href='{{ url_for('main.summarizer_view') }}?doc_id=' + this.value;">
+                            {% for d in documents %}
+                                <option value="{{ d.id }}" {% if selected_doc and selected_doc.id == d.id %}selected{% endif %}>
+                                    {{ d.original_filename }} &bull; {{ d.total_pages }} pages &bull; {{ "{:,}".format(d.total_words) }} words {% if d.processing_status == 'scanned_no_text' %}[⚠️ Scanned / No Text]{% elif d.processing_status == 'ocr_completed' %}[🔍 OCR Extracted]{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        {% if selected_doc %}
+                            <!-- Selected Document Preview Strip -->
+                            <div class="doc-preview-strip">
+                                <div class="doc-preview-item">
+                                    <div class="doc-preview-label">Document Name</div>
+                                    <div class="doc-preview-value" style="font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ selected_doc.original_filename }}">
+                                        {{ selected_doc.original_filename }}
+                                    </div>
+                                </div>
+                                <div class="doc-preview-item">
+                                    <div class="doc-preview-label">Pages</div>
+                                    <div class="doc-preview-value">{{ selected_doc.total_pages }}</div>
+                                </div>
+                                <div class="doc-preview-item">
+                                    <div class="doc-preview-label">Extracted Words</div>
+                                    <div class="doc-preview-value">{{ "{:,}".format(selected_doc.total_words) }}</div>
+                                </div>
+                                <div class="doc-preview-item">
+                                    <div class="doc-preview-label">Status</div>
+                                    <div style="margin-top: 4px;">
+                                        {% if selected_doc.processing_status == 'processed' %}
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; background: rgba(130, 150, 107, 0.2); color: var(--forest-green); font-size: 0.78rem; font-weight: 700;">✓ Ready</span>
+                                        {% elif selected_doc.processing_status == 'ocr_completed' %}
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; background: rgba(100, 160, 220, 0.2); color: #1a5a8a; font-size: 0.78rem; font-weight: 700;">🔍 OCR Done</span>
+                                        {% elif selected_doc.processing_status == 'scanned_no_text' or selected_doc.total_words == 0 %}
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; background: rgba(232, 199, 122, 0.35); color: #8A6D1D; font-size: 0.78rem; font-weight: 700;">⚠️ Scanned (0 Words)</span>
+                                        {% else %}
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; background: rgba(217, 83, 79, 0.2); color: #c9443b; font-size: 0.78rem; font-weight: 700;">{{ selected_doc.processing_status }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if selected_doc.processing_status == 'scanned_no_text' or selected_doc.total_words == 0 %}
+                                <!-- Scanned Document OCR Warning -->
+                                <div class="ocr-warning-box">
+                                    <div>
+                                        <div style="font-weight: 700; color: #8A6D1D; font-size: 0.92rem;">⚠️ Scanned Document (No Extractable Text)</div>
+                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 3px;">
+                                            This PDF contains scanned images or lacks digital text. AI Summarization requires text extraction via OCR first.
+                                        </div>
+                                    </div>
+                                    <a href="{{ url_for('main.document_details', doc_id=selected_doc.id) }}" class="btn-forest-pill" style="font-size: 0.82rem; padding: 8px 16px; text-decoration: none;">
+                                        🔍 Open Document to Run OCR →
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- 2. AI Summarization Section (Integrated with script.js via #summarization-section) -->
+                    <section class="editorial-card" id="summarization-section" data-doc-id="{{ selected_doc.id if selected_doc else '' }}" style="margin-bottom: 30px; position: relative;">
+                        <!-- Pushpin Accent -->
+                        <div class="sticky-pushpin" style="top: -12px; left: 32px; z-index: 5;"></div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border-warm); padding-bottom: 16px;">
+                            <div>
+                                <div class="editorial-tagline">HuggingFace DistilBART Seq2Seq Pipeline</div>
+                                <h2 style="font-family: var(--font-heading); font-size: 1.55rem; color: var(--text-primary); margin: 0 0 6px 0;">
+                                    Summarization Workspace
+                                </h2>
+                                <p class="editorial-subtitle" style="margin: 0;">
+                                    Select your preferred detail level below, then generate your study summary and concept extraction.
+                                </p>
+                            </div>
+                            <div style="font-size: 0.8rem; background: var(--bg-warm); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-warm); color: var(--forest-green); font-weight: 600;">
+                                🌿 Local Neural Model
+                            </div>
+                        </div>
+
+                        <!-- Summary Mode Controls -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; background: var(--bg-warm); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-warm);">
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Summary Mode:</span>
+                                <div class="mode-pills" role="radiogroup" aria-label="Summary Mode" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <label class="mode-pill {% if not current_summary or current_summary.summary_type == 'quick' %}active{% endif %}" id="pill-mode-quick" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                        <input type="radio" name="summary_type_select" value="quick" class="sr-only" style="display:none;" {% if not current_summary or current_summary.summary_type == 'quick' %}checked{% endif %}>
+                                        <span style="font-size: 1.1rem;">⚡</span>
+                                        <span>
+                                            <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Quick Summary</strong>
+                                            <small style="color: var(--text-secondary); font-size: 0.72rem;">5–7 Key Sentences</small>
+                                        </span>
+                                    </label>
+                                    <label class="mode-pill {% if current_summary and current_summary.summary_type == 'standard' %}active{% endif %}" id="pill-mode-standard" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                        <input type="radio" name="summary_type_select" value="standard" class="sr-only" style="display:none;" {% if current_summary and current_summary.summary_type == 'standard' %}checked{% endif %}>
+                                        <span style="font-size: 1.1rem;">📋</span>
+                                        <span>
+                                            <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Standard Summary</strong>
+                                            <small style="color: var(--text-secondary); font-size: 0.72rem;">Detailed Main Topics</small>
+                                        </span>
+                                    </label>
+                                    <label class="mode-pill {% if current_summary and current_summary.summary_type == 'detailed' %}active{% endif %}" id="pill-mode-detailed" style="cursor: pointer; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border-warm); background: #fff; display: flex; align-items: center; gap: 8px;">
+                                        <input type="radio" name="summary_type_select" value="detailed" class="sr-only" style="display:none;" {% if current_summary and current_summary.summary_type == 'detailed' %}checked{% endif %}>
+                                        <span style="font-size: 1.1rem;">📚</span>
+                                        <span>
+                                            <strong style="display: block; font-size: 0.85rem; color: var(--text-primary);">Detailed Summary</strong>
+                                            <small style="color: var(--text-secondary); font-size: 0.72rem;">Comprehensive & Sections</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                {% if not selected_doc or selected_doc.processing_status == 'scanned_no_text' or selected_doc.total_words == 0 %}
+                                    <button type="button" class="btn-primary-action disabled" disabled style="opacity: 0.6; cursor: not-allowed; padding: 10px 18px; border-radius: 20px;">
+                                        <span>⚠️ OCR Required to Summarize</span>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn-terracotta-pill" id="btn-generate-summary" style="padding: 10px 22px; font-size: 0.95rem; cursor: pointer;">
+                                        ✨ <span id="btn-generate-text">{% if current_summary %}Regenerate Summary{% else %}Generate Summary{% endif %}</span>
+                                    </button>
+
+                                    {% if current_summary %}
+                                        <form action="{{ url_for('main.delete_summary_route', doc_id=selected_doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Reset and remove saved summary?');">
+                                            <button type="submit" style="background: transparent; border: 1px solid var(--border-warm); color: var(--text-secondary); padding: 9px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;" title="Clear saved summary">
+                                                ↺ Reset
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Alert Message -->
+                        <div id="summary-alert" class="summary-alert hidden" style="margin-bottom: 16px;"></div>
+
+                        <!-- Loading / Processing State -->
+                        <div id="summary-loading" class="summary-loading-card hidden" style="background: var(--bg-secondary); border: 1.5px dashed var(--terracotta); border-radius: var(--radius-md); padding: 24px; text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 2.2rem; animation: spin 2s linear infinite; display: inline-block;">🌿</div>
+                            <h4 class="loading-title" id="loading-step-title" style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 12px 0 6px 0;">AI Transformer Processing Document...</h4>
+                            <p class="loading-subtitle" id="loading-step-sub" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px;">
+                                Segmenting text into contextual chunks and generating abstractive summary with local HuggingFace Seq2Seq model.
+                            </p>
+                            <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; max-width: 400px; margin: 0 auto;">
+                                <div class="loading-bar-fill" id="summary-progress-bar" style="background: var(--terracotta); height: 100%; width: 45%; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Content Panel -->
+                        <div id="summary-content-panel" class="summary-content-panel {% if not current_summary %}hidden{% endif %}">
+                            {% if current_summary %}
+                                <!-- Meta Strip -->
+                                <div class="summary-meta-strip" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 10px 16px; margin-bottom: 20px;">
+                                    <div style="font-size: 0.85rem;">
+                                        <span style="color: var(--text-secondary);">Mode:</span>
+                                        <strong style="color: var(--forest-green); text-transform: capitalize;" id="stat-summary-mode">{{ current_summary.summary_type }}</strong>
+                                    </div>
+                                    <div style="font-size: 0.85rem;">
+                                        <span style="color: var(--text-secondary);">Model:</span>
+                                        <span style="font-family: monospace; color: var(--text-primary);" id="stat-summary-model">{{ current_summary.model_name }}</span>
+                                    </div>
+                                    <div style="font-size: 0.85rem;">
+                                        <span style="color: var(--text-secondary);">Summary Length:</span>
+                                        <strong id="stat-summary-words">{{ current_summary.summary_text.split()|length }} words</strong>
+                                    </div>
+                                    {% if selected_doc and selected_doc.total_words > 0 %}
+                                        {% set red_pct = ((1.0 - (current_summary.summary_text.split()|length / selected_doc.total_words)) * 100)|round(1) %}
+                                        <div style="font-size: 0.85rem; background: rgba(130, 150, 107, 0.2); color: var(--forest-green); padding: 2px 10px; border-radius: 12px; font-weight: 700;">
+                                            ⏱️ ~{{ red_pct if red_pct > 0 else 0 }}% reading time saved
+                                        </div>
+                                    {% endif %}
+                                    <div style="margin-left: auto;">
+                                        <button type="button" id="btn-copy-summary" style="background: #fff; border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+                                            📋 Copy Summary
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tabs Bar -->
+                                <div class="summary-tabs" role="tablist" style="display: flex; gap: 8px; border-bottom: 1.5px solid var(--border-warm); margin-bottom: 20px; overflow-x: auto;">
+                                    <button type="button" class="summary-tab active" role="tab" id="tab-btn-summary-text" data-tab="tab-summary-text" style="background: transparent; border: none; border-bottom: 3px solid var(--terracotta); padding: 10px 16px; font-weight: 700; color: var(--text-primary); cursor: pointer;">
+                                        📝 Summary
+                                    </button>
+                                    <button type="button" class="summary-tab" role="tab" id="tab-btn-key-concepts" data-tab="tab-key-concepts" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                        💡 Key Concepts ({{ current_summary.key_concepts|length if current_summary.key_concepts else 0 }})
+                                    </button>
+                                    <button type="button" class="summary-tab" role="tab" id="tab-btn-exam-points" data-tab="tab-exam-points" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                        🎯 Exam Points ({{ current_summary.exam_points|length if current_summary.exam_points else 0 }})
+                                    </button>
+                                    <button type="button" class="summary-tab" role="tab" id="tab-btn-keywords" data-tab="tab-keywords" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                        🏷️ Keywords ({{ current_summary.keywords|length if current_summary.keywords else 0 }})
+                                    </button>
+                                    {% if current_summary.chapter_summaries %}
+                                    <button type="button" class="summary-tab" role="tab" id="tab-btn-chapters" data-tab="tab-chapters" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                        📖 Chapter Breakdown ({{ current_summary.chapter_summaries|length }})
+                                    </button>
+                                    {% endif %}
+                                    {% if current_summary.topics %}
+                                    <button type="button" class="summary-tab" role="tab" id="tab-btn-topics" data-tab="tab-topics" style="background: transparent; border: none; padding: 10px 16px; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                                        📂 Topics
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Tab 1: Summary Text -->
+                                <div class="tab-pane active" id="tab-summary-text" role="tabpanel">
+                                    <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-md); padding: 28px 32px; box-shadow: var(--shadow-sm); line-height: 1.8; font-size: 1.05rem; color: var(--text-primary);">
+                                        <div id="summary-prose-container">
+                                            {% for paragraph in current_summary.summary_text.split('\n\n') %}
+                                                {% if paragraph.strip() %}
+                                                    <p style="margin-bottom: 16px;">{{ paragraph.strip() }}</p>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 2: Key Concepts & Definitions -->
+                                <div class="tab-pane hidden" id="tab-key-concepts" role="tabpanel">
+                                    <div class="concepts-grid" id="concepts-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                        {% if current_summary.key_concepts %}
+                                            {% for c in current_summary.key_concepts %}
+                                                <div style="background: #fff; border: 1px solid var(--border-warm); border-left: 4px solid var(--terracotta); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                                        <span style="font-size: 0.7rem; font-weight: 700; background: rgba(201, 111, 72, 0.15); color: var(--terracotta); padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Concept</span>
+                                                        <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0;">{{ c.term }}</h4>
+                                                    </div>
+                                                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.6;">{{ c.definition }}</p>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p style="color: var(--text-secondary);">No explicit definition patterns identified in this text.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Tab 3: Exam Points -->
+                                <div class="tab-pane hidden" id="tab-exam-points" role="tabpanel">
+                                    <div class="exam-points-list" id="exam-points-container" style="display: flex; flex-direction: column; gap: 12px;">
+                                        {% if current_summary.exam_points %}
+                                            {% for pt in current_summary.exam_points %}
+                                                <div style="display: flex; gap: 14px; background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 14px 18px; align-items: flex-start;">
+                                                    <div style="background: var(--terracotta); color: #fff; font-weight: 800; font-size: 0.85rem; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                        {{ loop.index }}
+                                                    </div>
+                                                    <div style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.6;">
+                                                        {{ pt }}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p style="color: var(--text-secondary);">No exam-specific indicator sentences detected.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Tab 4: Keywords -->
+                                <div class="tab-pane hidden" id="tab-keywords" role="tabpanel">
+                                    <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-md); padding: 24px;">
+                                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 16px;">
+                                            Key technical terms and domain concepts ranked by TF-IDF relevance score:
+                                        </p>
+                                        <div class="keywords-cloud" id="keywords-container" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                            {% if current_summary.keywords %}
+                                                {% for kw in current_summary.keywords %}
+                                                    <span style="background: var(--bg-warm); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 16px; font-size: 0.85rem; color: var(--forest-green); font-weight: 600; cursor: pointer;" title="Click to copy" onclick="navigator.clipboard.writeText('{{ kw }}')">
+                                                        {{ kw }}
+                                                    </span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p style="color: var(--text-secondary);">No keywords extracted.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 5: Chapter Breakdown -->
+                                {% if current_summary.chapter_summaries %}
+                                <div class="tab-pane hidden" id="tab-chapters" role="tabpanel">
+                                    <div class="chapters-grid" id="chapter-breakdown-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+                                        {% for item in current_summary.chapter_summaries %}
+                                            <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                    <span style="background: rgba(130, 150, 107, 0.2); font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; color: var(--forest-green);">
+                                                        {{ item.section }}
+                                                    </span>
+                                                    <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">
+                                                        {{ item.word_count }} words
+                                                    </span>
+                                                </div>
+                                                <p style="font-size: 0.92rem; color: var(--text-primary); margin: 0; line-height: 1.6;">
+                                                    {{ item.summary }}
+                                                </p>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Tab 6: Topics & Subtopics -->
+                                {% if current_summary.topics %}
+                                <div class="tab-pane hidden" id="tab-topics" role="tabpanel">
+                                    <div class="topics-list" id="topics-container" style="display: flex; flex-direction: column; gap: 14px;">
+                                        {% for t in current_summary.topics %}
+                                            <div style="background: #fff; border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 18px 20px;">
+                                                <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0 0 10px 0;">
+                                                    {{ t.topic }}
+                                                </h4>
+                                                {% if t.subtopics and t.subtopics|length > 0 %}
+                                                    <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+                                                        {% for s in t.subtopics %}
+                                                            <li>{{ s }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Empty Placeholder (when no summary exists yet) -->
+                        <div id="summary-empty-placeholder" class="summary-empty-state {% if current_summary %}hidden{% endif %}" style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border-warm); border-radius: var(--radius-md);">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">🌿</div>
+                            <h3 style="font-family: var(--font-heading); font-size: 1.35rem; color: var(--text-primary); margin: 0 0 8px 0;">
+                                No Summary Generated Yet
+                            </h3>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px;">
+                                Select Quick, Standard, or Detailed mode above and click <strong>Generate Summary</strong> to run the local DistilBART neural pipeline on this document.
+                            </p>
+                        </div>
+                    </section>
+                {% else %}
+                    <!-- Zero Documents State -->
+                    <div class="editorial-card" style="text-align: center; padding: 60px 24px; margin-top: 24px;">
+                        <div style="font-size: 3.2rem; margin-bottom: 16px;">📚</div>
+                        <h2 style="font-family: var(--font-heading); color: var(--text-primary); margin-bottom: 8px;">No Documents in Library</h2>
+                        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 24px; font-size: 0.95rem; line-height: 1.6;">
+                            Upload a PDF textbook, lecture slides, or study notes to your library first. The AI Summarizer will automatically extract concepts, exam points, and comprehensive summaries.
+                        </p>
+                        <a href="{{ url_for('main.upload_center') }}" class="btn-terracotta-pill" style="text-decoration: none; padding: 12px 28px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                            <span>+ Upload Your First PDF</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </main>
+
+            <!-- FOOTER -->
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Offline DistilBART Summarization Engine</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

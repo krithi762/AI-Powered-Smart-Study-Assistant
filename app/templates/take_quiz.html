@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} - Interactive Quiz | SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .exam-desk-header {
+            background: #fff;
+            border-bottom: 1.5px solid var(--border-warm);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: var(--shadow-sm);
+        }
+        .exam-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            max-width: 1200px;
+            margin: 28px auto;
+            padding: 0 24px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .exam-layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .exam-paper-card {
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-lg);
+            padding: 36px 40px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+        .option-label {
+            display: block;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .option-label input[type="radio"] {
+            display: none;
+        }
+        .option-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border: 1.5px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            background: var(--bg-warm);
+            transition: all 0.2s ease;
+        }
+        .option-label:hover .option-card {
+            border-color: var(--sage-green);
+            background: #fff;
+            transform: translateX(3px);
+        }
+        .option-label.selected .option-card,
+        .option-label input[type="radio"]:checked + .option-card {
+            border-color: var(--terracotta);
+            background: var(--cream-soft);
+            box-shadow: 0 0 0 2px rgba(201, 111, 72, 0.2);
+        }
+        .option-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1.5px solid var(--border-warm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .option-label.selected .option-letter,
+        .option-label input[type="radio"]:checked + .option-card .option-letter {
+            background: var(--terracotta);
+            color: #fff;
+            border-color: var(--terracotta);
+        }
+        .option-text {
+            font-size: 1rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .question-numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+        .q-grid-btn {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid var(--border-warm);
+            background: #fff;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .q-grid-btn:hover {
+            border-color: var(--forest-green);
+            color: var(--forest-green);
+        }
+        .q-grid-btn.active {
+            border-color: var(--terracotta);
+            background: var(--cream-soft);
+            color: var(--terracotta);
+            box-shadow: 0 0 0 2px rgba(201, 111, 72, 0.25);
+        }
+        .q-grid-btn.answered {
+            background: rgba(130, 150, 107, 0.25);
+            border-color: var(--sage-green);
+            color: var(--forest-green);
+        }
+        .q-grid-btn.answered.active {
+            border-color: var(--terracotta);
+            box-shadow: 0 0 0 2px rgba(201, 111, 72, 0.3);
+        }
+    </style>
+</head>
+<body class="quiz-taking-body" data-quiz-id="{{ quiz.id }}" data-total-questions="{{ total_questions }}" data-time-limit="{{ quiz.time_limit_minutes }}" style="background: var(--bg-primary); min-height: 100vh;">
+    <!-- Top Examination Bar -->
+    <header class="exam-desk-header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <a href="{{ url_for('main.quizzes_hub') }}" style="color: var(--forest-green); text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+                <span style="font-size: 1.2rem;">←</span>
+                <span>Exit Quiz</span>
+            </a>
+            <div style="height: 24px; width: 1px; background: var(--border-warm);"></div>
+            <div>
+                <h1 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 0; line-height: 1.2;">
+                    {{ quiz.title }}
+                </h1>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                    Material: <span style="font-family: monospace;">{{ quiz.original_filename }}</span> &bull; <span style="text-transform: capitalize;">{{ quiz.difficulty }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer / Mode Center -->
+        <div>
+            {% if quiz.time_limit_minutes and quiz.time_limit_minutes > 0 %}
+                <div class="quiz-timer-box" id="quiz-timer-box" style="display: flex; align-items: center; gap: 8px; background: var(--bg-warm); border: 1.5px solid var(--terracotta); padding: 6px 14px; border-radius: 20px;">
+                    <span style="font-size: 1rem;">⏱️</span>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Remaining:</span>
+                    <span id="timer-display" style="font-family: monospace; font-size: 1.1rem; font-weight: 800; color: var(--terracotta);">--:--</span>
+                </div>
+            {% else %}
+                <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-warm); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; color: var(--forest-green); font-weight: 600;">
+                    <span>🌿 Untimed Study Mode</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+            <button type="button" id="btn-open-submit-modal" class="btn-terracotta-pill" style="padding: 9px 20px; font-size: 0.9rem; cursor: pointer;">
+                Submit Quiz ✓
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Exam Workspace -->
+    <div class="exam-layout-grid">
+        <!-- Main Question Desk -->
+        <div>
+            <!-- Progress Tracker -->
+            <div style="background: #fff; border: 1.5px solid var(--border-warm); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 8px;">
+                    <span style="color: var(--text-primary); font-weight: 700;">
+                        Question <strong id="current-q-num">1</strong> of <strong>{{ total_questions }}</strong>
+                    </span>
+                    <span style="color: var(--text-secondary);">
+                        <strong id="answered-count-label" style="color: var(--forest-green);">0</strong> / {{ total_questions }} Answered (<span id="answered-pct-label">0%</span>)
+                    </span>
+                </div>
+                <div style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div id="quiz-progress-fill" style="background: var(--terracotta); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Active Question Sheet -->
+            <div class="exam-paper-card" id="question-card">
+                <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-warm); padding-bottom: 12px;">
+                    <span class="q-badge" id="q-number-badge" style="background: var(--terracotta); color: #fff; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.82rem;">Q1</span>
+                    <span class="q-source-badge" id="q-source-badge" style="font-size: 0.78rem; color: var(--text-secondary); font-family: monospace;">
+                        Source: {{ quiz.original_filename }}{% if questions[0].source_page %} &bull; Page {{ questions[0].source_page }}{% endif %}
+                    </span>
+                </div>
+
+                <h2 id="question-text" style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 24px 0;">
+                    {{ questions[0].question_text }}
+                </h2>
+
+                <!-- 4 Answer Options -->
+                <div class="options-container" id="options-container">
+                    <label class="option-label" data-option="A">
+                        <input type="radio" name="current_option" value="A" class="option-radio">
+                        <div class="option-card">
+                            <span class="option-letter">A</span>
+                            <span class="option-text" id="opt-a-text">{{ questions[0].option_a }}</span>
+                        </div>
+                    </label>
+
+                    <label class="option-label" data-option="B">
+                        <input type="radio" name="current_option" value="B" class="option-radio">
+                        <div class="option-card">
+                            <span class="option-letter">B</span>
+                            <span class="option-text" id="opt-b-text">{{ questions[0].option_b }}</span>
+                        </div>
+                    </label>
+
+                    <label class="option-label" data-option="C">
+                        <input type="radio" name="current_option" value="C" class="option-radio">
+                        <div class="option-card">
+                            <span class="option-letter">C</span>
+                            <span class="option-text" id="opt-c-text">{{ questions[0].option_c }}</span>
+                        </div>
+                    </label>
+
+                    <label class="option-label" data-option="D">
+                        <input type="radio" name="current_option" value="D" class="option-radio">
+                        <div class="option-card">
+                            <span class="option-letter">D</span>
+                            <span class="option-text" id="opt-d-text">{{ questions[0].option_d }}</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Footer Navigation -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border-warm);">
+                    <button type="button" id="btn-prev-question" class="btn-card-action" style="padding: 10px 18px; border-radius: 20px; font-weight: 600;" disabled>
+                        ← Previous
+                    </button>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">
+                        Select any option to record answer
+                    </span>
+                    <button type="button" id="btn-next-question" class="btn-terracotta-pill" style="padding: 10px 22px; font-size: 0.9rem; cursor: pointer;">
+                        Next →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Question Navigator Sidebar -->
+        <aside>
+            <div style="background: #fff; border: 1.5px solid var(--border-warm); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-warm); padding-bottom: 10px;">
+                    <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary); margin: 0;">
+                        Question Navigator
+                    </h3>
+                </div>
+
+                <div style="display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(130, 150, 107, 0.4); display: inline-block;"></span> Answered
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 10px; height: 10px; border-radius: 2px; background: #fff; border: 1px solid var(--border-warm); display: inline-block;"></span> Pending
+                    </div>
+                </div>
+
+                <!-- Grid of Question Buttons -->
+                <div class="question-numbers-grid" id="question-numbers-grid">
+                    {% for q in questions %}
+                        <button
+                            type="button"
+                            class="q-grid-btn {% if loop.first %}active{% endif %}"
+                            data-index="{{ loop.index0 }}"
+                            id="q-nav-btn-{{ loop.index0 }}"
+                        >
+                            {{ loop.index }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-warm);">
+                    <button type="button" id="btn-submit-sidebar" class="btn-terracotta-pill" style="width: 100%; text-align: center; padding: 12px; font-size: 0.92rem; cursor: pointer;">
+                        Submit All Answers ✓
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Confirmation Modal before Submission -->
+    <div id="submit-confirm-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(23, 60, 43, 0.45); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);">
+        <div class="editorial-card" style="max-width: 440px; width: 90%; padding: 28px; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">📋</div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin: 0 0 8px 0;">
+                Ready to Submit Quiz?
+            </h3>
+            <p id="modal-summary-text" style="font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 14px 0;">
+                You have answered 0 of {{ total_questions }} questions.
+            </p>
+            <div id="unanswered-warning-box" class="warning-box hidden" style="background: rgba(232, 199, 122, 0.2); border: 1px solid var(--yellow-warm); padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.82rem; color: #8A6D1D; margin-bottom: 18px; text-align: left;">
+                ⚠️ You have unanswered questions. Any unanswered question will receive 0 points.
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" id="btn-cancel-modal" class="btn-card-action" style="padding: 10px 18px; border-radius: 20px; font-weight: 600;">
+                    Keep Answering
+                </button>
+                <button type="button" id="btn-confirm-submit" class="btn-terracotta-pill" style="padding: 10px 22px; font-size: 0.9rem; cursor: pointer;">
+                    Confirm & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submitting Spinner Modal -->
+    <div id="submitting-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(23, 60, 43, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);">
+        <div class="editorial-card text-center" style="max-width: 380px; width: 90%; padding: 32px 24px; text-align: center;">
+            <div style="font-size: 2.8rem; margin-bottom: 12px; animation: spin 2s linear infinite; display: inline-block;">🌿</div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.35rem; color: var(--text-primary); margin: 0 0 6px 0;">Grading Your Quiz...</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Evaluating answers against source document excerpts and calculating your score.</p>
+        </div>
+    </div>
+
+    <!-- Hidden Raw Questions Data for Client Controller -->
+    <script id="quiz-questions-json" type="application/json">
+        {{ questions | tojson }}
+    </script>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

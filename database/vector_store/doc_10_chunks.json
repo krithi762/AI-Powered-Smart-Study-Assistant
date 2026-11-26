@@ -1,0 +1,20 @@
+[
+  {
+    "document_id": 10,
+    "original_filename": "test.pdf",
+    "page_number": 1,
+    "chunk_index": 0,
+    "chunk_id": "doc_10_p1_c0",
+    "chunk_text": "Igneous rocks form through the cooling and solidification of magma or lava. Granite is a common intrusive ig",
+    "word_count": 18
+  },
+  {
+    "document_id": 10,
+    "original_filename": "test.pdf",
+    "page_number": 2,
+    "chunk_index": 1,
+    "chunk_id": "doc_10_p2_c1",
+    "chunk_text": "Sedimentary rocks form through the accumulation and cementation of sediments. Limestone is a sedimenta",
+    "word_count": 14
+  }
+]

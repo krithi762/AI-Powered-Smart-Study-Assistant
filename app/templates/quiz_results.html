@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results - {{ quiz.title }} | SmartStudy.ai</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .score-circle-badge {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--forest-green);
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+        .score-circle-badge.fail {
+            border-color: var(--terracotta);
+        }
+        .review-option-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-sm);
+            background: var(--bg-warm);
+            margin-bottom: 8px;
+        }
+        .review-option-row.opt-correct-key {
+            background: rgba(130, 150, 107, 0.2);
+            border-color: var(--sage-green);
+        }
+        .review-option-row.opt-wrong-selected {
+            background: rgba(201, 111, 72, 0.15);
+            border-color: var(--terracotta);
+        }
+        .opt-letter-tag {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--border-warm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .opt-correct-key .opt-letter-tag {
+            background: var(--forest-green);
+            color: #fff;
+            border-color: var(--forest-green);
+        }
+        .opt-wrong-selected .opt-letter-tag {
+            background: var(--terracotta);
+            color: #fff;
+            border-color: var(--terracotta);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- MAIN CONTENT -->
+        <div class="app-main app-main-content">
+            <!-- TOPBAR -->
+            <header class="editorial-topbar">
+                <div class="topbar-search-wrap">
+                    <div class="topbar-search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search tests, scores, or concepts...">
+                        <span class="search-shortcut-badge">Ctrl + K</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right-actions">
+                    <a href="{{ url_for('main.quiz_history_view') }}" class="topbar-icon-btn" title="Quiz History">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 8v4l3 3"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                    </a>
+
+                    <div class="topbar-icon-btn" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+
+                    <a href="{{ url_for('main.settings_view') }}" class="user-profile-badge">
+                        <div class="user-avatar-circle">{{ current_student.initials|default('K') }}</div>
+                        <span class="user-display-name">{{ current_student.full_name|default('Krishna K') }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <main class="page-container">
+                <!-- Breadcrumbs -->
+                <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                    <a href="{{ url_for('main.quizzes_hub') }}" style="color: var(--terracotta); text-decoration: none; font-weight: 600;">← Quizzes Hub</a>
+                    <span>/</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">{{ quiz.title }} Results</span>
+                </div>
+
+                <!-- Results Hero Dossier Card -->
+                <div class="editorial-card" style="margin-bottom: 30px; position: relative; background: linear-gradient(135deg, #FFFDF9 0%, #F5ECE0 100%);">
+                    <div class="sticky-pushpin" style="top: -12px; left: 32px;"></div>
+
+                    <div style="display: flex; gap: 32px; align-items: center; flex-wrap: wrap;">
+                        <!-- Left: Circular Score Gauge -->
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                            <div class="score-circle-badge {% if not evaluation.passed %}fail{% endif %}">
+                                <span style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">
+                                    {{ evaluation.percentage }}%
+                                </span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">
+                                    {{ evaluation.score }}/{{ evaluation.total_questions }} Correct
+                                </span>
+                            </div>
+                            <div>
+                                {% if evaluation.passed %}
+                                    <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; background: rgba(130, 150, 107, 0.25); color: var(--forest-green); font-size: 0.8rem; font-weight: 800;">
+                                        ✓ PASSED (Pass Mark: 60%)
+                                    </span>
+                                {% else %}
+                                    <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; background: rgba(201, 111, 72, 0.2); color: var(--terracotta); font-size: 0.8rem; font-weight: 800;">
+                                        ✕ NEEDS REVIEW (&lt; 60%)
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Right: Details -->
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                                <span style="background: var(--bg-warm); font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; text-transform: capitalize; color: var(--text-primary);">
+                                    {{ quiz.difficulty }} Difficulty
+                                </span>
+                                <span style="background: var(--bg-warm); font-size: 0.75rem; font-family: monospace; padding: 3px 10px; border-radius: 12px; color: var(--text-secondary);">
+                                    📄 {{ quiz.original_filename }}
+                                </span>
+                                <span style="background: var(--bg-warm); font-size: 0.75rem; font-family: monospace; padding: 3px 10px; border-radius: 12px; color: var(--text-secondary);">
+                                    ⏱ {{ evaluation.time_taken_formatted }}
+                                </span>
+                            </div>
+
+                            <h1 style="font-family: var(--font-heading); font-size: 1.85rem; color: var(--text-primary); margin: 0 0 6px 0;">
+                                Quiz Results: {{ quiz.title }}
+                            </h1>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 18px 0; line-height: 1.5;">
+                                {% if evaluation.passed %}
+                                    Excellent work! You demonstrated solid comprehension of the factual material extracted from <strong>{{ quiz.original_filename }}</strong>.
+                                {% else %}
+                                    Keep practicing! Review the detailed explanations and source page references below to reinforce your knowledge.
+                                {% endif %}
+                            </p>
+
+                            <!-- Key Metrics Chips -->
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                                <div style="background: #fff; border: 1px solid var(--border-warm); padding: 8px 14px; border-radius: var(--radius-sm); text-align: center;">
+                                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--forest-green);">{{ evaluation.correct_answers }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Correct</div>
+                                </div>
+                                <div style="background: #fff; border: 1px solid var(--border-warm); padding: 8px 14px; border-radius: var(--radius-sm); text-align: center;">
+                                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--terracotta);">{{ evaluation.incorrect_answers }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Incorrect</div>
+                                </div>
+                                <div style="background: #fff; border: 1px solid var(--border-warm); padding: 8px 14px; border-radius: var(--radius-sm); text-align: center;">
+                                    <div style="font-size: 1.15rem; font-weight: 800; color: #9A6E24;">{{ evaluation.unanswered_count }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Unanswered</div>
+                                </div>
+                                <div style="background: #fff; border: 1px solid var(--border-warm); padding: 8px 14px; border-radius: var(--radius-sm); text-align: center;">
+                                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); font-family: monospace;">{{ evaluation.total_questions }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Total Qs</div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <a href="{{ url_for('main.take_quiz_view', quiz_id=quiz.id) }}" class="btn-terracotta-pill" style="text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">
+                                    🔄 Retake This Quiz
+                                </a>
+                                <a href="{{ url_for('main.new_quiz_config', doc_id=quiz.document_id) }}" class="btn-card-action" style="background: #fff; text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 20px;">
+                                    ✨ Generate Another Quiz
+                                </a>
+                                <a href="{{ url_for('main.quiz_history_view') }}" class="btn-card-action" style="background: #fff; text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 20px;">
+                                    📜 History Log
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Question-by-Question Review -->
+                <section style="margin-bottom: 40px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+                        <div>
+                            <div class="editorial-tagline">Explanations & Citations</div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.6rem; color: var(--text-primary); margin: 0 0 4px 0;">
+                                Question-by-Question Review
+                            </h2>
+                            <p class="editorial-subtitle" style="margin: 0;">Verified against source text with exact page citations</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 18px;">
+                        {% for q in evaluation.review %}
+                            <div class="editorial-card" style="background: #fff; {% if q.is_correct %}border-left: 4px solid var(--forest-green);{% elif q.is_unanswered %}border-left: 4px solid var(--yellow-warm);{% else %}border-left: 4px solid var(--terracotta);{% endif %}">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-warm); padding-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-weight: 800; font-size: 0.85rem; color: var(--text-primary);">Q{{ q.question_number }}</span>
+                                        {% if q.is_correct %}
+                                            <span style="background: rgba(130, 150, 107, 0.25); color: var(--forest-green); font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">✓ Correct (+1 pt)</span>
+                                        {% elif q.is_unanswered %}
+                                            <span style="background: rgba(232, 199, 122, 0.3); color: #8A6D1D; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">⚠ Unanswered (0 pts)</span>
+                                        {% else %}
+                                            <span style="background: rgba(201, 111, 72, 0.2); color: var(--terracotta); font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">✕ Incorrect (0 pts)</span>
+                                        {% endif %}
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">{{ q.difficulty }}</span>
+                                    </div>
+                                    <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-secondary);">
+                                        {% if q.source_page %}Page {{ q.source_page }} &bull; {% endif %}{{ q.source_document }}
+                                    </span>
+                                </div>
+
+                                <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.4;">
+                                    {{ q.question_text }}
+                                </h3>
+
+                                <!-- Options Breakdown -->
+                                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                                    {% for opt_letter in ['A', 'B', 'C', 'D'] %}
+                                        {% set opt_text = q['option_' + opt_letter.lower()] %}
+                                        {% set is_selected = (q.selected_option == opt_letter) %}
+                                        {% set is_answer_key = (q.correct_option == opt_letter) %}
+
+                                        <div class="review-option-row {% if is_answer_key %}opt-correct-key{% endif %} {% if is_selected and not is_answer_key %}opt-wrong-selected{% endif %}">
+                                            <div class="opt-letter-tag">{{ opt_letter }}</div>
+                                            <div style="flex: 1; font-size: 0.92rem; color: var(--text-primary);">{{ opt_text }}</div>
+                                            <div>
+                                                {% if is_answer_key %}
+                                                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--forest-green); background: #fff; padding: 3px 8px; border-radius: 8px;">✓ Correct Answer</span>
+                                                {% elif is_selected %}
+                                                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--terracotta); background: #fff; padding: 3px 8px; border-radius: 8px;">Your Choice</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Explanation Box -->
+                                <div style="background: var(--bg-warm); border: 1px solid var(--border-warm); border-radius: var(--radius-sm); padding: 14px 16px;">
+                                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.8rem; color: var(--forest-green); margin-bottom: 4px;">
+                                        <span>💡 Explanation & Source Evidence:</span>
+                                    </div>
+                                    <p style="font-size: 0.88rem; color: var(--text-primary); margin: 0; line-height: 1.55;">
+                                        {{ q.explanation }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </main>
+
+            <footer style="padding: 24px 32px; border-top: 1px solid var(--border-warm); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                <p>&copy; 2026 AI-Powered Smart Study Assistant &bull; Organic Editorial Learning Dashboard</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
